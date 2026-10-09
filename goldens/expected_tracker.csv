@@ -1,0 +1,15 @@
+name,email,years_experience,must_haves_met,nice_to_haves,fit_score,decision,resume_file
+Aditi Sharma,aditi.sharma@example.com,5,yes,AWS;Docker;LangChain;MLflow;Spark;Kubernetes,6,shortlisted,resumes/aditi_sharma.txt
+Rohan Mehta,rohan.mehta@example.com,4,yes,AWS;Docker;LangChain;MLflow;Kubernetes,5,shortlisted,resumes/rohan_mehta.txt
+Priya Nair,priya.nair@example.com,5,yes,Docker;LangChain;MLflow;Spark,4,shortlisted,resumes/priya_nair.txt
+Dev Malhotra,dev.malhotra@example.com,3,yes,AWS;Docker;MLflow,3,shortlisted,resumes/dev_malhotra.txt
+Tara Menon,tara.menon@example.com,6,yes,Spark;MLflow;Kubernetes,3,shortlisted,resumes/tara_menon.txt
+Isha Reddy,isha.reddy@example.com,2,yes,LangChain;Docker,2,shortlisted,resumes/isha_reddy.txt
+Ananya Rao,ananya.rao@example.com,3,yes,AWS,1,shortlisted,resumes/ananya_rao.txt
+Sneha Patel,sneha.patel@example.com,2,yes,Docker,1,shortlisted,resumes/sneha_patel.txt
+Karan Shah,,2,yes,,0,shortlisted,resumes/karan_shah.txt
+Vikram Singh,vikram.singh@example.com,4,no,,0,rejected,resumes/vikram_singh.txt
+Neha Kapoor,neha.kapoor@example.com,3,no,,0,rejected,resumes/neha_kapoor.txt
+Arjun Verma,arjun.verma@example.com,1,no,,0,rejected,resumes/arjun_verma.txt
+Meera Joshi,meera.joshi@example.com,4,no,,0,rejected,resumes/meera_joshi.txt
+Kabir Khan,kabir.khan@example.com,3,no,,0,rejected,resumes/kabir_khan.txt
