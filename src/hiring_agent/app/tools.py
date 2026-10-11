@@ -55,9 +55,10 @@ def add_candidate(
 ) -> str:
     """Add ONE candidate as a new row in the candidates.csv tracker and return the
     new candidate_id. must_haves_met is 'yes' or 'no'. nice_to_haves is the matched
-    nice-to-have skills separated by semicolons (empty if none). fit_score is a whole
-    number from 0 to 6. decision is 'shortlisted' or 'rejected'. email is empty if the
-    resume has none. It refuses a candidate whose name is already in the tracker.
+    nice-to-have skills separated by semicolons (empty if none). fit_score is the ATS
+    score, a whole number from 0 to 100, computed with the job description's scoring
+    rule (rejected candidates keep their real score). decision is 'shortlisted' or
+    'rejected'. email is empty if the resume has none. It refuses a candidate whose name is already in the tracker.
     It does not move the resume file and does not edit existing rows."""
     try:
         candidate_id = workspace.add_tracker_row(

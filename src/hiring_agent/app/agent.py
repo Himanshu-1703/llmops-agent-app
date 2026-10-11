@@ -49,9 +49,15 @@ RULES:
   the tracker (to see who is shortlisted, their emails or scores, or to check for duplicates), add a
   step "Call read_file with path='candidates.csv'" and let later steps use its result. Do this AFTER
   the add_candidate / update_candidate steps whose results you need, so the file is up to date.
-- Ranking or counting questions ("top 3", "how many") need resume contents or tracker scores. If the
-  tracker is empty, read and score the resumes first (add_candidate for each), then read the tracker
-  with read_file on candidates.csv.
+- Only add to the tracker the candidates the task asks for. Do NOT add_candidate for every resume
+  unless the task says to screen/add everyone. If the task names a criterion ("everyone with AWS",
+  "only the Python developers"), still read every resume, but write the add_candidate step as
+  conditional: "If the candidate in step N has <criterion>, call add_candidate ...; otherwise make no
+  tool call and say why". The same applies to move_file and draft_email steps for those candidates.
+- Ranking or counting questions ("top 3", "how many") need resume contents. Do NOT add anyone to the
+  tracker just to rank or count: read each resume, ask the executor to state the ATS score in that
+  step's result, and let later steps use it. Add to the tracker only the candidates the task asks to
+  track or shortlist, as conditional steps.
 - Interview invites: you cannot know who will be shortlisted, so after the tracker has been read with
   read_file on candidates.csv, write one conditional step per candidate, e.g. "If <name> is shortlisted
   in the tracker from step N and has an email, call draft_email ...; otherwise make no tool call and
@@ -82,6 +88,14 @@ Plan:
 1. Call read_file with path='job_description.md'.
 2. Call read_file with path='resumes/mia_chen.txt'.
 3. Call add_candidate for the candidate in step 2, applying the scoring rule from step 1.
+
+Task: Add every candidate who knows Docker to the tracker.
+Plan:
+1. Call read_file with path='job_description.md'.
+2. Call read_file with path='resumes/mia_chen.txt'.
+3. If the candidate in step 2 has Docker, call add_candidate for them, applying the scoring rule from step 1; otherwise make no tool call and say they do not have Docker.
+4. Call read_file with path='resumes/sam_ortiz.txt'.
+5. If the candidate in step 4 has Docker, call add_candidate for them, applying the scoring rule from step 1; otherwise make no tool call and say they do not have Docker.
 
 Task: Screen all resumes, sort them into shortlisted and rejected, and schedule interviews for the shortlisted.
 Plan:

@@ -46,7 +46,7 @@ SEED_FILES = {
 - Git version control
 - At least 2 years of work experience
 
-## Nice-to-have (1 point each)
+## Nice-to-have (5 points each)
 - AWS
 - Docker
 - LangChain
@@ -54,10 +54,13 @@ SEED_FILES = {
 - Spark
 - Kubernetes
 
-## Scoring rule
-- Candidates meeting all must-haves are SHORTLISTED.
-- Fit score = number of nice-to-have skills (0 to 6).
-- Candidates missing any must-have are REJECTED with fit score 0.
+## Scoring rule (ATS score, 0 to 100)
+- Each must-have met is worth 14 points (5 must-haves = 70 points).
+- Each nice-to-have present is worth 5 points (6 nice-to-haves = 30 points).
+- ATS score = must-have points + nice-to-have points.
+- Decision does not depend on the score: candidates meeting all must-haves are
+  SHORTLISTED, candidates missing any must-have are REJECTED.
+- Rejected candidates still get their real ATS score (not 0).
 - Screen only on skills and experience listed above.
 """,
 
@@ -367,8 +370,8 @@ def _check_value(field: str, value: str) -> str:
     value = str(value).strip()
     if field == "decision" and value not in DECISIONS:
         raise ValueError(f"decision must be one of {DECISIONS}, got '{value}'")
-    if field == "fit_score" and value not in ("0", "1", "2", "3", "4", "5", "6"):
-        raise ValueError(f"fit_score must be a whole number from 0 to 6, got '{value}'")
+    if field == "fit_score" and not (value.isdigit() and 0 <= int(value) <= 100):
+        raise ValueError(f"fit_score must be a whole number from 0 to 100, got '{value}'")
     if field == "must_haves_met" and value not in ("yes", "no"):
         raise ValueError(f"must_haves_met must be 'yes' or 'no', got '{value}'")
     return value

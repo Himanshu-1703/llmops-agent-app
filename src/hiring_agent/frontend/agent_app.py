@@ -222,7 +222,7 @@ def show_tracker(rows: list[dict]) -> None:
                 "name": st.column_config.TextColumn("Name", pinned=True),
                 "decision": "Decision",
                 "fit_score": st.column_config.ProgressColumn(
-                    "Fit score", min_value=0, max_value=6, format="%d"
+                    "ATS score", min_value=0, max_value=100, format="%d"
                 ),
                 "years_experience": "Years",
                 "must_haves_met": "Must-haves met",
