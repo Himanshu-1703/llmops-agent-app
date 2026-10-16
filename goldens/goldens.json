@@ -1,0 +1,38 @@
+[
+  {
+    "input": "What are the must-have skills for the Junior ML Engineer role?",
+    "additional_metadata": {"difficulty": "easy", "type": "read_and_answer"}
+  },
+  {
+    "input": "Screen Ananya Rao's resume and add her to the tracker",
+    "additional_metadata": {"difficulty": "easy", "type": "screen_one"}
+  },
+  {
+    "input": "Move vikram_singh.txt to the rejected folder",
+    "additional_metadata": {"difficulty": "easy", "type": "single_action"}
+  },
+  {
+    "input": "Screen Tara Menon and Isha Reddy, add both to the tracker, and move each resume to shortlisted or rejected based on the result",
+    "additional_metadata": {"difficulty": "medium", "type": "screen_and_sort"}
+  },
+  {
+    "input": "Screen Dev Malhotra's resume, add him to the tracker, move his resume to shortlisted or rejected, and draft an interview invite for him if he is shortlisted",
+    "additional_metadata": {"difficulty": "medium", "type": "screen_sort_invite"}
+  },
+  {
+    "input": "Find and delete any duplicate resumes",
+    "additional_metadata": {"difficulty": "medium", "type": "duplicate_handling"}
+  },
+  {
+    "input": "Which candidates have Spark experience? List their names.",
+    "additional_metadata": {"difficulty": "difficult", "type": "read_all_and_answer"}
+  },
+  {
+    "input": "Add every candidate with Spark experience to the tracker, move their resumes to shortlisted or rejected based on the result, and draft an interview invite for each one who is shortlisted",
+    "additional_metadata": {"difficulty": "difficult", "type": "bulk_full_flow"}
+  },
+  {
+    "input": "Screen Vikram Singh and Karan Shah, add both to the tracker, move each resume to shortlisted or rejected, and draft an interview invite for each one who is shortlisted and has an email address",
+    "additional_metadata": {"difficulty": "difficult", "type": "conditional_steps"}
+  }
+]

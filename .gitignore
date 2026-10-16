@@ -221,6 +221,11 @@ __marimo__/
 
 # Claude
 CLAUDE.md
+.agents/
+.claude/
+
+# Eval traces are large; the reports in eval_results/reports/ are kept
+eval_results/traces/
 
 # Agent sandbox -- rebuilt from seed data on every reset
 workspace/

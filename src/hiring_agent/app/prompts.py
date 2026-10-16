@@ -30,15 +30,25 @@ RULES:
 - For "all/every/each" tasks, write the steps for EACH file in the snapshot, one file after the
   other, using its exact path. The executor cannot loop, so a step like "for each resume" will fail.
 - Read job_description.md before screening anyone.
+- Screening a candidate takes TWO steps. The executor decides every value while it writes a tool
+  call, and it makes mistakes when it does that in one go. So first write a step with no tool call
+  that works the values out: "Make no tool call: for the candidate in step N, using the job
+  description from step 1, state for each must-have whether it is met, the matched nice-to-haves,
+  the ATS score (14 points per must-have met plus 5 per nice-to-have) and the decision (shortlisted
+  only if ALL must-haves are met)". Then write a short step: "Call add_candidate for the candidate in
+  step N with the values worked out in step M, resume_file='...'". Never put the working-out and the
+  tool call in the same step.
 - The tracker is the file candidates.csv. There is no separate tracker tool: whenever a step needs
   the tracker (to see who is shortlisted, their emails or scores, or to check for duplicates), add a
   step "Call read_file with path='candidates.csv'" and let later steps use its result. Do this AFTER
   the add_candidate / update_candidate steps whose results you need, so the file is up to date.
 - Only add to the tracker the candidates the task asks for. Do NOT add_candidate for every resume
   unless the task says to screen/add everyone. If the task names a criterion ("everyone with AWS",
-  "only the Python developers"), still read every resume, but write the add_candidate step as
-  conditional: "If the candidate in step N has <criterion>, call add_candidate ...; otherwise make no
-  tool call and say why". The same applies to move_file and draft_email steps for those candidates.
+  "only the Python developers"), still read every resume, but write the working-out step and the
+  add_candidate step as conditional: "If the candidate in step N has <criterion>, make no tool call:
+  work out ...; otherwise make no tool call and say they do not have <criterion>" and "If the candidate
+  in step N has <criterion>, call add_candidate with the values worked out in step M ...; otherwise make
+  no tool call and say why". The same applies to move_file and draft_email steps for those candidates.
 - Ranking or counting questions ("top 3", "how many") need resume contents. Do NOT add anyone to the
   tracker just to rank or count: read each resume, ask the executor to state the ATS score in that
   step's result, and let later steps use it. Add to the tracker only the candidates the task asks to
@@ -72,26 +82,31 @@ Task: Screen Mia Chen's resume and add her to the tracker.
 Plan:
 1. Call read_file with path='job_description.md'.
 2. Call read_file with path='resumes/mia_chen.txt'.
-3. Call add_candidate for the candidate in step 2, applying the scoring rule from step 1.
+3. Make no tool call: for the candidate in step 2, using the job description from step 1, state each must-have as met or not met, the matched nice-to-haves, the ATS score and the decision.
+4. Call add_candidate for the candidate in step 2 with the values worked out in step 3, resume_file='resumes/mia_chen.txt'.
 
 Task: Add every candidate who knows Docker to the tracker.
 Plan:
 1. Call read_file with path='job_description.md'.
 2. Call read_file with path='resumes/mia_chen.txt'.
-3. If the candidate in step 2 has Docker, call add_candidate for them, applying the scoring rule from step 1; otherwise make no tool call and say they do not have Docker.
-4. Call read_file with path='resumes/sam_ortiz.txt'.
-5. If the candidate in step 4 has Docker, call add_candidate for them, applying the scoring rule from step 1; otherwise make no tool call and say they do not have Docker.
+3. If the candidate in step 2 has Docker, make no tool call: state each must-have as met or not met, the matched nice-to-haves, the ATS score and the decision, using the job description from step 1; otherwise make no tool call and say they do not have Docker.
+4. If the candidate in step 2 has Docker, call add_candidate with the values worked out in step 3, resume_file='resumes/mia_chen.txt'; otherwise make no tool call and say they do not have Docker.
+5. Call read_file with path='resumes/sam_ortiz.txt'.
+6. If the candidate in step 5 has Docker, make no tool call: state each must-have as met or not met, the matched nice-to-haves, the ATS score and the decision, using the job description from step 1; otherwise make no tool call and say they do not have Docker.
+7. If the candidate in step 5 has Docker, call add_candidate with the values worked out in step 6, resume_file='resumes/sam_ortiz.txt'; otherwise make no tool call and say they do not have Docker.
 
 Task: Screen all resumes, sort them into shortlisted and rejected, and schedule interviews for the shortlisted.
 Plan:
 1. Call read_file with path='job_description.md'.
 2. Call read_file with path='resumes/mia_chen.txt'.
-3. Call add_candidate for the candidate in step 2, applying the scoring rule from step 1.
-4. Call move_file to move 'resumes/mia_chen.txt' to 'shortlisted/' or 'rejected/' based on the decision in step 3.
-5. Call read_file with path='resumes/sam_ortiz.txt'.
-6. Call add_candidate for the candidate in step 5, applying the scoring rule from step 1.
-7. Call move_file to move 'resumes/sam_ortiz.txt' to 'shortlisted/' or 'rejected/' based on the decision in step 6.
-8. Make no tool call: tell the user that interviews cannot be scheduled because there is no scheduling tool.
+3. Make no tool call: for the candidate in step 2, using the job description from step 1, state each must-have as met or not met, the matched nice-to-haves, the ATS score and the decision.
+4. Call add_candidate for the candidate in step 2 with the values worked out in step 3, resume_file='resumes/mia_chen.txt'.
+5. Call move_file to move 'resumes/mia_chen.txt' to 'shortlisted/' or 'rejected/' based on the decision in step 3.
+6. Call read_file with path='resumes/sam_ortiz.txt'.
+7. Make no tool call: for the candidate in step 6, using the job description from step 1, state each must-have as met or not met, the matched nice-to-haves, the ATS score and the decision.
+8. Call add_candidate for the candidate in step 6 with the values worked out in step 7, resume_file='resumes/sam_ortiz.txt'.
+9. Call move_file to move 'resumes/sam_ortiz.txt' to 'shortlisted/' or 'rejected/' based on the decision in step 7.
+10. Make no tool call: tell the user that interviews cannot be scheduled because there is no scheduling tool.
 """
 
 EXECUTOR_SYSTEM_PROMPT = """You run ONE step of a plan for a hiring assistant, using the tools you have.

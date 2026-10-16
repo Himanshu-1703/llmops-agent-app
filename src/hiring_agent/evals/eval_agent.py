@@ -1,0 +1,109 @@
+"""Task Completion + Plan Quality + Plan Adherence eval for the hiring agent.
+
+Every metric grades the SAME run: the agent runs once per golden, DeepEval's
+CallbackHandler records one trace, and the trace metric reads the slim version of it.
+
+    Task Completion                did the task get done?  (DeepEval, reads the trace)
+    Plan Quality (sees workspace)  our G-Eval judge: task + plan + the snapshot the planner saw
+    Plan Adherence (custom)        our G-Eval judge: task + plan + what the executor did per step
+
+DeepEval's built-in Plan Quality and Plan Adherence are not used: the first only sees the
+task and the plan, the second is "adversarial" and marks correct runs down (see the
+plan_quality_comparison report for the first).
+
+Run (from the project root):
+    uv run python -m hiring_agent.evals.eval_agent                 # all goldens
+    uv run python -m hiring_agent.evals.eval_agent --only 2 6      # goldens number 2 and 6 (1-based)
+
+Then open eval_results/reports/agent_eval_<date>_<time>.md.
+"""
+
+import argparse
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+from deepeval.dataset import EvaluationDataset
+from deepeval.evaluate.configs import AsyncConfig, DisplayConfig
+from deepeval.integrations.langchain import CallbackHandler
+
+from hiring_agent.evals.adherence_judge import adherence_test_case
+from hiring_agent.evals.metrics import (
+    ADHERENCE_JUDGE,
+    JUDGE_MODEL,
+    PLAN_QUALITY_JUDGE,
+    make_plan_adherence_judge,
+    make_plan_quality_judge,
+    make_trace_metrics,
+)
+from hiring_agent.evals.plan_judge import plan_test_case
+from hiring_agent.evals.report import print_summary, write_report
+from hiring_agent.app import clients
+from hiring_agent.app.agent import build_agent, run_agent
+from hiring_agent.app.prompts import EXECUTOR_PROMPT_NAME, PLANNER_PROMPT_NAME, RESPONDER_PROMPT_NAME, load_prompt
+from hiring_agent.app.workspace import ROOT_DIR, reset_workspace, workspace_snapshot
+
+GOLDENS_PATH = ROOT_DIR / "goldens" / "goldens.json"
+
+
+def load_goldens(only: list[int] | None):
+    dataset = EvaluationDataset()
+    dataset.add_goldens_from_json_file(str(GOLDENS_PATH))
+    goldens = dataset.goldens
+    if only:
+        goldens = [goldens[n - 1] for n in only]  # 1-based, like the report
+    return EvaluationDataset(goldens=goldens)
+
+
+def run_metadata() -> dict:
+    prompts = ", ".join(f"{n.split('_')[2]} v{load_prompt(n).version}" for n in (PLANNER_PROMPT_NAME, EXECUTOR_PROMPT_NAME, RESPONDER_PROMPT_NAME))
+    return {
+        "Planner model": clients.PLANNER_MODEL,
+        "Executor / responder model": clients.EXECUTOR_MODEL,
+        "Judge model": JUDGE_MODEL,
+        "Langfuse prompts": prompts,
+    }
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--only", type=int, nargs="+", help="run only these golden numbers (1-based)")
+    args = parser.parse_args()
+
+    dataset = load_goldens(args.only)
+    agent = build_agent()
+    meta = run_metadata()
+
+    rows = []  # (golden, {metric name: metric}, final state); scores are filled in by DeepEval
+    try:
+        for golden in dataset.evals_iterator(
+            async_config=AsyncConfig(run_async=False),  # one golden at a time: they share one workspace/
+            display_config=DisplayConfig(inspect_after_run=False),
+        ):
+            reset_workspace()
+            snapshot = workspace_snapshot()  # exactly what the planner is about to see
+
+            # fresh metrics for every golden: a metric stores its own score and reason
+            trace_metrics = make_trace_metrics()
+            plan_judge = make_plan_quality_judge()
+            adherence_judge = make_plan_adherence_judge()
+            metrics = {**trace_metrics, PLAN_QUALITY_JUDGE: plan_judge, ADHERENCE_JUDGE: adherence_judge}
+
+            state = run_agent(agent, golden.input, callbacks=[CallbackHandler(metrics=list(trace_metrics.values()))], full=True)
+            rows.append((golden, metrics, state))
+
+            # our two judges read the final state, not the trace
+            for judge, test_case in (
+                (plan_judge, plan_test_case(golden.input, state["plan"], snapshot)),
+                (adherence_judge, adherence_test_case(golden.input, state["plan"], state["past_steps"])),
+            ):
+                try:
+                    judge.measure(test_case)
+                except Exception as e:  # show it in the report instead of crashing the run
+                    judge.error = f"{type(e).__name__}: {e}"
+    finally:
+        # always write the report, even if the run crashed or was stopped
+        if rows:
+            print_summary(rows)
+            print("\nReport:", write_report(rows, "agent_eval", meta))

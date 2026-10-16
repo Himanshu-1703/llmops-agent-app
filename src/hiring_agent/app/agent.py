@@ -73,8 +73,8 @@ def build_agent(llm=None, planner_llm=None):
 
     # system prompts from Langfuse; only the planner's has a variable (the tool list)
     planner_system = load_prompt(PLANNER_PROMPT_NAME).compile(tool_list=TOOL_LIST)
-    executor_system = load_prompt(EXECUTOR_PROMPT_NAME)
-    responder_system = load_prompt(RESPONDER_PROMPT_NAME)
+    executor_system = load_prompt(EXECUTOR_PROMPT_NAME).compile()
+    responder_system = load_prompt(RESPONDER_PROMPT_NAME).compile()
 
     # the sub-agent that runs a single step: model <-> tools loop
     step_executor = create_agent(llm, TOOLS, system_prompt=executor_system)
