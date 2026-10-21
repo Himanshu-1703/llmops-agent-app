@@ -223,6 +223,7 @@ __marimo__/
 CLAUDE.md
 .agents/
 .claude/
+docs/
 
 # Eval traces are large; the reports in eval_results/reports/ are kept
 eval_results/traces/

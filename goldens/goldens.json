@@ -1,38 +1,136 @@
 [
   {
     "input": "What are the must-have skills for the Junior ML Engineer role?",
-    "additional_metadata": {"difficulty": "easy", "type": "read_and_answer"}
+    "additional_metadata": {"difficulty": "easy", "type": "read_and_answer"},
+    "expected_tools": [
+      {"name": "read_file", "input_parameters": {"path": "job_description.md"}}
+    ]
   },
   {
     "input": "Screen Ananya Rao's resume and add her to the tracker",
-    "additional_metadata": {"difficulty": "easy", "type": "screen_one"}
+    "additional_metadata": {"difficulty": "easy", "type": "screen_one"},
+    "expected_tools": [
+      {"name": "read_file", "input_parameters": {"path": "job_description.md"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/ananya_rao.txt"}},
+      {"name": "add_candidate", "input_parameters": {"name": "Ananya Rao", "email": "ananya.rao@example.com", "years_experience": 3, "must_haves_met": "yes", "nice_to_haves": "AWS", "fit_score": 75, "decision": "shortlisted", "resume_file": "resumes/ananya_rao.txt"}}
+    ]
   },
   {
     "input": "Move vikram_singh.txt to the rejected folder",
-    "additional_metadata": {"difficulty": "easy", "type": "single_action"}
+    "additional_metadata": {"difficulty": "easy", "type": "single_action"},
+    "expected_tools": [
+      {"name": "move_file", "input_parameters": {"source": "resumes/vikram_singh.txt", "destination": "rejected/"}}
+    ]
   },
   {
     "input": "Screen Tara Menon and Isha Reddy, add both to the tracker, and move each resume to shortlisted or rejected based on the result",
-    "additional_metadata": {"difficulty": "medium", "type": "screen_and_sort"}
+    "additional_metadata": {"difficulty": "medium", "type": "screen_and_sort"},
+    "expected_tools": [
+      {"name": "read_file", "input_parameters": {"path": "job_description.md"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/tara_menon.txt"}},
+      {"name": "add_candidate", "input_parameters": {"name": "Tara Menon", "email": "tara.menon@example.com", "years_experience": 6, "must_haves_met": "yes", "nice_to_haves": "Kubernetes;MLflow;Spark", "fit_score": 85, "decision": "shortlisted", "resume_file": "resumes/tara_menon.txt"}},
+      {"name": "move_file", "input_parameters": {"source": "resumes/tara_menon.txt", "destination": "shortlisted/"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/isha_reddy.txt"}},
+      {"name": "add_candidate", "input_parameters": {"name": "Isha Reddy", "email": "isha.reddy@example.com", "years_experience": 2, "must_haves_met": "yes", "nice_to_haves": "Docker;LangChain", "fit_score": 80, "decision": "shortlisted", "resume_file": "resumes/isha_reddy.txt"}},
+      {"name": "move_file", "input_parameters": {"source": "resumes/isha_reddy.txt", "destination": "shortlisted/"}}
+    ]
   },
   {
     "input": "Screen Dev Malhotra's resume, add him to the tracker, move his resume to shortlisted or rejected, and draft an interview invite for him if he is shortlisted",
-    "additional_metadata": {"difficulty": "medium", "type": "screen_sort_invite"}
+    "additional_metadata": {"difficulty": "medium", "type": "screen_sort_invite"},
+    "expected_tools": [
+      {"name": "read_file", "input_parameters": {"path": "job_description.md"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/dev_malhotra.txt"}},
+      {"name": "add_candidate", "input_parameters": {"name": "Dev Malhotra", "email": "dev.malhotra@example.com", "years_experience": 3, "must_haves_met": "yes", "nice_to_haves": "AWS;Docker;MLflow", "fit_score": 85, "decision": "shortlisted", "resume_file": "resumes/dev_malhotra.txt"}},
+      {"name": "move_file", "input_parameters": {"source": "resumes/dev_malhotra.txt", "destination": "shortlisted/"}},
+      {"name": "draft_email", "input_parameters": {"to": "dev.malhotra@example.com"}}
+    ]
   },
   {
     "input": "Find and delete any duplicate resumes",
-    "additional_metadata": {"difficulty": "medium", "type": "duplicate_handling"}
+    "additional_metadata": {"difficulty": "medium", "type": "duplicate_handling"},
+    "expected_tools": [
+      {"name": "read_file", "input_parameters": {"path": "resumes/aditi_sharma.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/ananya_rao.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/arjun_verma.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/dev_malhotra.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/isha_reddy.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/kabir_khan.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/karan_shah.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/meera_joshi.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/neha_kapoor.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/priya_nair.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/rohan_mehta.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/rohan_mehta_resume_final.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/sneha_patel.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/tara_menon.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/vikram_singh.txt"}},
+      {"name": "delete_file", "input_parameters": {"path": "resumes/rohan_mehta.txt"}}
+    ]
   },
   {
     "input": "Which candidates have Spark experience? List their names.",
-    "additional_metadata": {"difficulty": "difficult", "type": "read_all_and_answer"}
+    "additional_metadata": {"difficulty": "difficult", "type": "read_all_and_answer"},
+    "expected_tools": [
+      {"name": "read_file", "input_parameters": {"path": "resumes/aditi_sharma.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/ananya_rao.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/arjun_verma.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/dev_malhotra.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/isha_reddy.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/kabir_khan.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/karan_shah.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/meera_joshi.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/neha_kapoor.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/priya_nair.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/rohan_mehta.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/rohan_mehta_resume_final.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/sneha_patel.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/tara_menon.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/vikram_singh.txt"}}
+    ]
   },
   {
     "input": "Add every candidate with Spark experience to the tracker, move their resumes to shortlisted or rejected based on the result, and draft an interview invite for each one who is shortlisted",
-    "additional_metadata": {"difficulty": "difficult", "type": "bulk_full_flow"}
+    "additional_metadata": {"difficulty": "difficult", "type": "bulk_full_flow"},
+    "expected_tools": [
+      {"name": "read_file", "input_parameters": {"path": "job_description.md"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/aditi_sharma.txt"}},
+      {"name": "add_candidate", "input_parameters": {"name": "Aditi Sharma", "email": "aditi.sharma@example.com", "years_experience": 5, "must_haves_met": "yes", "nice_to_haves": "AWS;Docker;Kubernetes;LangChain;MLflow;Spark", "fit_score": 100, "decision": "shortlisted", "resume_file": "resumes/aditi_sharma.txt"}},
+      {"name": "move_file", "input_parameters": {"source": "resumes/aditi_sharma.txt", "destination": "shortlisted/"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/ananya_rao.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/arjun_verma.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/dev_malhotra.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/isha_reddy.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/kabir_khan.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/karan_shah.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/meera_joshi.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/neha_kapoor.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/priya_nair.txt"}},
+      {"name": "add_candidate", "input_parameters": {"name": "Priya Nair", "email": "priya.nair@example.com", "years_experience": 5, "must_haves_met": "yes", "nice_to_haves": "Docker;LangChain;MLflow;Spark", "fit_score": 90, "decision": "shortlisted", "resume_file": "resumes/priya_nair.txt"}},
+      {"name": "move_file", "input_parameters": {"source": "resumes/priya_nair.txt", "destination": "shortlisted/"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/rohan_mehta.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/rohan_mehta_resume_final.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/sneha_patel.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/tara_menon.txt"}},
+      {"name": "add_candidate", "input_parameters": {"name": "Tara Menon", "email": "tara.menon@example.com", "years_experience": 6, "must_haves_met": "yes", "nice_to_haves": "Kubernetes;MLflow;Spark", "fit_score": 85, "decision": "shortlisted", "resume_file": "resumes/tara_menon.txt"}},
+      {"name": "move_file", "input_parameters": {"source": "resumes/tara_menon.txt", "destination": "shortlisted/"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/vikram_singh.txt"}},
+      {"name": "draft_email", "input_parameters": {"to": "aditi.sharma@example.com"}},
+      {"name": "draft_email", "input_parameters": {"to": "priya.nair@example.com"}},
+      {"name": "draft_email", "input_parameters": {"to": "tara.menon@example.com"}}
+    ]
   },
   {
     "input": "Screen Vikram Singh and Karan Shah, add both to the tracker, move each resume to shortlisted or rejected, and draft an interview invite for each one who is shortlisted and has an email address",
-    "additional_metadata": {"difficulty": "difficult", "type": "conditional_steps"}
+    "additional_metadata": {"difficulty": "difficult", "type": "conditional_steps"},
+    "expected_tools": [
+      {"name": "read_file", "input_parameters": {"path": "job_description.md"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/vikram_singh.txt"}},
+      {"name": "add_candidate", "input_parameters": {"name": "Vikram Singh", "email": "vikram.singh@example.com", "years_experience": 4, "must_haves_met": "no", "nice_to_haves": "AWS;Docker", "fit_score": 66, "decision": "rejected", "resume_file": "resumes/vikram_singh.txt"}},
+      {"name": "move_file", "input_parameters": {"source": "resumes/vikram_singh.txt", "destination": "rejected/"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/karan_shah.txt"}},
+      {"name": "add_candidate", "input_parameters": {"name": "Karan Shah", "email": "", "years_experience": 2, "must_haves_met": "yes", "nice_to_haves": "", "fit_score": 70, "decision": "shortlisted", "resume_file": "resumes/karan_shah.txt"}},
+      {"name": "move_file", "input_parameters": {"source": "resumes/karan_shah.txt", "destination": "shortlisted/"}}
+    ]
   }
 ]

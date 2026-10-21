@@ -1,4 +1,4 @@
-"""Task Completion + Plan Quality + Plan Adherence eval for the hiring agent.
+"""Task Completion + Plan Quality + Plan Adherence + Tool Correctness eval for the hiring agent.
 
 Every metric grades the SAME run: the agent runs once per golden, DeepEval's
 CallbackHandler records one trace, and the trace metric reads the slim version of it.
@@ -6,6 +6,8 @@ CallbackHandler records one trace, and the trace metric reads the slim version o
     Task Completion                did the task get done?  (DeepEval, reads the trace)
     Plan Quality (sees workspace)  our G-Eval judge: task + plan + the snapshot the planner saw
     Plan Adherence (custom)        our G-Eval judge: task + plan + what the executor did per step
+    Tool Correctness               DeepEval: the tool calls (recorded by ToolCallRecorder) vs the
+                                   golden's expected_tools, exact match in code (no LLM)
 
 DeepEval's built-in Plan Quality and Plan Adherence are not used: the first only sees the
 task and the plan, the second is "adversarial" and marks correct runs down (see the
@@ -27,18 +29,22 @@ load_dotenv()
 from deepeval.dataset import EvaluationDataset
 from deepeval.evaluate.configs import AsyncConfig, DisplayConfig
 from deepeval.integrations.langchain import CallbackHandler
+from deepeval.test_case import LLMTestCase
 
 from hiring_agent.evals.adherence_judge import adherence_test_case
 from hiring_agent.evals.metrics import (
     ADHERENCE_JUDGE,
     JUDGE_MODEL,
     PLAN_QUALITY_JUDGE,
+    TOOL_CORRECTNESS,
     make_plan_adherence_judge,
     make_plan_quality_judge,
+    make_tool_correctness,
     make_trace_metrics,
 )
 from hiring_agent.evals.plan_judge import plan_test_case
 from hiring_agent.evals.report import print_summary, write_report
+from hiring_agent.evals.tool_calls import ToolCallRecorder, clean_tool_calls
 from hiring_agent.app import clients
 from hiring_agent.app.agent import build_agent, run_agent
 from hiring_agent.app.prompts import EXECUTOR_PROMPT_NAME, PLANNER_PROMPT_NAME, RESPONDER_PROMPT_NAME, load_prompt
@@ -88,15 +94,25 @@ if __name__ == "__main__":
             trace_metrics = make_trace_metrics()
             plan_judge = make_plan_quality_judge()
             adherence_judge = make_plan_adherence_judge()
-            metrics = {**trace_metrics, PLAN_QUALITY_JUDGE: plan_judge, ADHERENCE_JUDGE: adherence_judge}
+            tool_correctness = make_tool_correctness()
+            metrics = {**trace_metrics, PLAN_QUALITY_JUDGE: plan_judge, ADHERENCE_JUDGE: adherence_judge,
+                       TOOL_CORRECTNESS: tool_correctness}
 
-            state = run_agent(agent, golden.input, callbacks=[CallbackHandler(metrics=list(trace_metrics.values()))], full=True)
+            recorder = ToolCallRecorder()  # collects this golden's tool calls for Tool Correctness
+            state = run_agent(agent, golden.input, callbacks=[CallbackHandler(metrics=list(trace_metrics.values())), recorder], full=True)
             rows.append((golden, metrics, state))
 
-            # our two judges read the final state, not the trace
+            # these read the final state or the recorded tool calls, not the trace
+            tools_test_case = LLMTestCase(
+                input=golden.input,
+                actual_output=state["response"],
+                tools_called=recorder.tool_calls,
+                expected_tools=clean_tool_calls(golden.expected_tools),  # same cleaning on both sides
+            )
             for judge, test_case in (
                 (plan_judge, plan_test_case(golden.input, state["plan"], snapshot)),
                 (adherence_judge, adherence_test_case(golden.input, state["plan"], state["past_steps"])),
+                (tool_correctness, tools_test_case),
             ):
                 try:
                     judge.measure(test_case)

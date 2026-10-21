@@ -31,9 +31,8 @@ SEED_DIRS = ["resumes", "shortlisted", "rejected", "drafts"]
 # --------------------------------------------------------------------------
 # Seed data: the fixed starting world (path -> content)
 #
-# WARNING: goldens/expected_tracker.csv is written against exactly this seed.
-# If you change a resume or the job description, re-check the expected file
-# and every golden.
+# WARNING: goldens/goldens.json is written against exactly this seed.
+# If you change a resume or the job description, re-check every golden.
 # --------------------------------------------------------------------------
 
 SEED_FILES = {
