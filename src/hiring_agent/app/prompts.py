@@ -2,16 +2,18 @@ from dotenv import load_dotenv
 from langfuse import get_client
 
 from hiring_agent.app.clients import logger
+from hiring_agent.config.parameter_config import params_config
 
 # load the Langfuse keys from .env
 load_dotenv()
 
-# every new prompt version automatically gets the "latest" label in Langfuse
-PROMPT_LABEL = "latest"
+# label and prompt names come from params.yaml.
+# Every new prompt version automatically gets the "latest" label in Langfuse.
+PROMPT_LABEL = params_config.prompts.label
 
-PLANNER_PROMPT_NAME = "hiring_agent_planner_prompt"
-EXECUTOR_PROMPT_NAME = "hiring_agent_executor_prompt"
-RESPONDER_PROMPT_NAME = "hiring_agent_responder_prompt"
+PLANNER_PROMPT_NAME = params_config.prompts.planner_prompt_name
+EXECUTOR_PROMPT_NAME = params_config.prompts.executor_prompt_name
+RESPONDER_PROMPT_NAME = params_config.prompts.responder_prompt_name
 
 
 # {{tool_list}} is filled in by the planner node at run time

@@ -44,6 +44,21 @@ def print_summary(rows) -> None:
             print(f"      {_one_line(r['reason'])}")
 
 
+def _averages(results) -> dict[str, float]:
+    """Average score per metric over the goldens that got a score (errors are skipped)."""
+    averages = {}
+    for m in results[0][1]:
+        scored = [r[m]["score"] for _, r, _ in results if r[m]["score"] is not None]
+        averages[m] = sum(scored) / len(scored) if scored else float("nan")
+    return averages
+
+
+def metric_averages(rows) -> dict[str, float]:
+    """Average score per metric for a run: the same numbers as the report's Aggregate table."""
+    results = [(golden, {m: _result(obj) for m, obj in metrics.items()}, state) for golden, metrics, state in rows]
+    return _averages(results)
+
+
 def write_report(rows, name: str, meta: dict) -> str:
     """Write the md + csv report and return the markdown path."""
     results = [(golden, {m: _result(obj) for m, obj in metrics.items()}, state) for golden, metrics, state in rows]
@@ -57,10 +72,10 @@ def write_report(rows, name: str, meta: dict) -> str:
     md += [f"- **Goldens:** {len(results)}", f"- **Pass threshold:** {THRESHOLD}", ""]
 
     md += ["## Aggregate", "", "| Metric | Average score | Passed |", "|---|---|---|"]
+    averages = _averages(results)
     for m in metric_names:
-        scored = [r[m] for _, r, _ in results if r[m]["score"] is not None]
-        avg = sum(x["score"] for x in scored) / len(scored) if scored else float("nan")
-        md.append(f"| {m} | {avg:.2f} | {sum(x['passed'] for x in scored)}/{len(results)} |")
+        passed = sum(r[m]["passed"] for _, r, _ in results)
+        md.append(f"| {m} | {averages[m]:.2f} | {passed}/{len(results)} |")
 
     md += ["", "### Pass rate by difficulty", "", "| Difficulty | " + " | ".join(metric_names) + " |",
            "|---|" + "---|" * len(metric_names)]

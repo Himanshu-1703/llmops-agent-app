@@ -1,0 +1,16 @@
+# agent parameters
+agent:
+  planner_model: gpt-6.1-sol
+  planner_reasoning_effort: low
+  executor_model: gpt-5.4-mini
+  executor_temperature: 0.0
+  responder_model: gpt-5.4-mini
+  responder_temperature: 0.0
+  recursion_limit: 100
+
+# langfuse prompt management
+prompts:
+  label: latest
+  planner_prompt_name: hiring_agent_planner_prompt
+  executor_prompt_name: hiring_agent_executor_prompt
+  responder_prompt_name: hiring_agent_responder_prompt

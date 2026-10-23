@@ -20,9 +20,11 @@ from langchain_core.prompts import PromptTemplate
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
+from hiring_agent.app.clients import agent_params
 from hiring_agent.app.clients import llm as default_llm
 from hiring_agent.app.clients import logger
 from hiring_agent.app.clients import planner_llm as default_planner_llm
+from hiring_agent.app.clients import responder_llm as default_responder_llm
 from hiring_agent.app.prompts import (
     EXECUTOR_PROMPT_NAME,
     PLANNER_PROMPT_NAME,
@@ -31,9 +33,6 @@ from hiring_agent.app.prompts import (
 )
 from hiring_agent.app.tools import TOOL_LIST, TOOLS
 from hiring_agent.app.workspace import workspace_snapshot
-
-# a full screening run is ~30 executor visits, so give the graph plenty of room
-RECURSION_LIMIT = 100
 
 # The message each node sends with its run-time data. These are not versioned in Langfuse:
 # they only carry values, the behaviour comes from the system prompts.
@@ -62,7 +61,7 @@ class PlanExecuteState(TypedDict):
 # Graph
 # --------------------------------------------------------------------------
 
-def build_agent(llm=None, planner_llm=None):
+def build_agent(llm=None, planner_llm=None, responder_llm=None):
     """Compile and return the plan-and-execute graph.
 
     The prompts are fetched from Langfuse here, so a new "latest" version is picked up
@@ -70,6 +69,7 @@ def build_agent(llm=None, planner_llm=None):
     """
     llm = llm or default_llm
     planner_llm = planner_llm or default_planner_llm
+    responder_llm = responder_llm or default_responder_llm
 
     # system prompts from Langfuse; only the planner's has a variable (the tool list)
     planner_system = load_prompt(PLANNER_PROMPT_NAME).compile(tool_list=TOOL_LIST)
@@ -109,7 +109,7 @@ def build_agent(llm=None, planner_llm=None):
             f"{i}. {step}\n   Result: {result}"
             for i, (step, result) in enumerate(state["past_steps"], start=1)
         )
-        reply = llm.invoke([
+        reply = responder_llm.invoke([
             ("system", responder_system),
             ("human", RESPONDER_INPUT.format(task=state["task"], results=results)),
         ])
@@ -139,8 +139,9 @@ def run_agent(agent, task: str, callbacks=None, full: bool = False):
 
     Does NOT reset the workspace; the caller decides when to do that.
     """
+    # a full screening run is ~30 executor visits, so params.yaml gives the graph plenty of room
     final_state = agent.invoke(
         {"task": task, "past_steps": []},
-        config={"recursion_limit": RECURSION_LIMIT, "callbacks": callbacks or []},
+        config={"recursion_limit": agent_params.recursion_limit, "callbacks": callbacks or []},
     )
     return final_state if full else final_state["response"]
