@@ -32,3 +32,5 @@ Two dark-theme diagrams of the guardrails, made with the diagram-design skill. O
   `guard_fallback`. The bottom row is the tool path inside every executor step (resume guard in
   `read_file`, draft guard in `draft_email`, delete cap in `delete_file`). A legend explains
   each layer in plain words.
+
+![Guarded DFD of the hiring agent](agent_guarded_dfd.png)
