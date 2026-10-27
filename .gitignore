@@ -231,3 +231,5 @@ eval_results/traces/
 # Agent sandbox -- rebuilt from seed data on every reset
 workspace/
 workspace_original/
+# Streamlit app sandbox -- filled with the user's uploads
+workspace_app/

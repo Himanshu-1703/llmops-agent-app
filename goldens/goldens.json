@@ -47,7 +47,7 @@
     ]
   },
   {
-    "input": "Find and delete any duplicate resumes",
+    "input": "Read every resume in the resumes folder and find any duplicates (the same person in two files, with the same name and email). For each duplicate pair, keep the file whose name says it is the final version and delete the other copy. Do not delete any other file.",
     "additional_metadata": {"difficulty": "medium", "type": "duplicate_handling"},
     "expected_tools": [
       {"name": "read_file", "input_parameters": {"path": "resumes/aditi_sharma.txt"}},
@@ -95,8 +95,6 @@
     "expected_tools": [
       {"name": "read_file", "input_parameters": {"path": "job_description.md"}},
       {"name": "read_file", "input_parameters": {"path": "resumes/aditi_sharma.txt"}},
-      {"name": "add_candidate", "input_parameters": {"name": "Aditi Sharma", "email": "aditi.sharma@example.com", "years_experience": 5, "must_haves_met": "yes", "nice_to_haves": "AWS;Docker;Kubernetes;LangChain;MLflow;Spark", "fit_score": 100, "decision": "shortlisted", "resume_file": "resumes/aditi_sharma.txt"}},
-      {"name": "move_file", "input_parameters": {"source": "resumes/aditi_sharma.txt", "destination": "shortlisted/"}},
       {"name": "read_file", "input_parameters": {"path": "resumes/ananya_rao.txt"}},
       {"name": "read_file", "input_parameters": {"path": "resumes/arjun_verma.txt"}},
       {"name": "read_file", "input_parameters": {"path": "resumes/dev_malhotra.txt"}},
@@ -106,15 +104,17 @@
       {"name": "read_file", "input_parameters": {"path": "resumes/meera_joshi.txt"}},
       {"name": "read_file", "input_parameters": {"path": "resumes/neha_kapoor.txt"}},
       {"name": "read_file", "input_parameters": {"path": "resumes/priya_nair.txt"}},
-      {"name": "add_candidate", "input_parameters": {"name": "Priya Nair", "email": "priya.nair@example.com", "years_experience": 5, "must_haves_met": "yes", "nice_to_haves": "Docker;LangChain;MLflow;Spark", "fit_score": 90, "decision": "shortlisted", "resume_file": "resumes/priya_nair.txt"}},
-      {"name": "move_file", "input_parameters": {"source": "resumes/priya_nair.txt", "destination": "shortlisted/"}},
       {"name": "read_file", "input_parameters": {"path": "resumes/rohan_mehta.txt"}},
       {"name": "read_file", "input_parameters": {"path": "resumes/rohan_mehta_resume_final.txt"}},
       {"name": "read_file", "input_parameters": {"path": "resumes/sneha_patel.txt"}},
       {"name": "read_file", "input_parameters": {"path": "resumes/tara_menon.txt"}},
+      {"name": "read_file", "input_parameters": {"path": "resumes/vikram_singh.txt"}},
+      {"name": "add_candidate", "input_parameters": {"name": "Aditi Sharma", "email": "aditi.sharma@example.com", "years_experience": 5, "must_haves_met": "yes", "nice_to_haves": "AWS;Docker;Kubernetes;LangChain;MLflow;Spark", "fit_score": 100, "decision": "shortlisted", "resume_file": "resumes/aditi_sharma.txt"}},
+      {"name": "move_file", "input_parameters": {"source": "resumes/aditi_sharma.txt", "destination": "shortlisted/"}},
+      {"name": "add_candidate", "input_parameters": {"name": "Priya Nair", "email": "priya.nair@example.com", "years_experience": 5, "must_haves_met": "yes", "nice_to_haves": "Docker;LangChain;MLflow;Spark", "fit_score": 90, "decision": "shortlisted", "resume_file": "resumes/priya_nair.txt"}},
+      {"name": "move_file", "input_parameters": {"source": "resumes/priya_nair.txt", "destination": "shortlisted/"}},
       {"name": "add_candidate", "input_parameters": {"name": "Tara Menon", "email": "tara.menon@example.com", "years_experience": 6, "must_haves_met": "yes", "nice_to_haves": "Kubernetes;MLflow;Spark", "fit_score": 85, "decision": "shortlisted", "resume_file": "resumes/tara_menon.txt"}},
       {"name": "move_file", "input_parameters": {"source": "resumes/tara_menon.txt", "destination": "shortlisted/"}},
-      {"name": "read_file", "input_parameters": {"path": "resumes/vikram_singh.txt"}},
       {"name": "draft_email", "input_parameters": {"to": "aditi.sharma@example.com"}},
       {"name": "draft_email", "input_parameters": {"to": "priya.nair@example.com"}},
       {"name": "draft_email", "input_parameters": {"to": "tara.menon@example.com"}}

@@ -36,8 +36,10 @@ RULES:
   call, and it makes mistakes when it does that in one go. So first write a step with no tool call
   that works the values out: "Make no tool call: for the candidate in step N, using the job
   description from step 1, state for each must-have whether it is met, the matched nice-to-haves,
-  the ATS score (14 points per must-have met plus 5 per nice-to-have) and the decision (shortlisted
-  only if ALL must-haves are met)". Then write a short step: "Call add_candidate for the candidate in
+  the ATS score (add up the points the job description's scoring rule gives for each criterion
+  met) and the decision (as the job description's rule says, e.g. shortlisted only if ALL
+  must-haves are met)". Every job description has its own scoring rule, so never write point
+  values into the plan. Then write a short step: "Call add_candidate for the candidate in
   step N with the values worked out in step M, resume_file='...'". Never put the working-out and the
   tool call in the same step.
 - The tracker is the file candidates.csv. There is no separate tracker tool: whenever a step needs
@@ -46,11 +48,20 @@ RULES:
   the add_candidate / update_candidate steps whose results you need, so the file is up to date.
 - Only add to the tracker the candidates the task asks for. Do NOT add_candidate for every resume
   unless the task says to screen/add everyone. If the task names a criterion ("everyone with AWS",
-  "only the Python developers"), still read every resume, but write the working-out step and the
-  add_candidate step as conditional: "If the candidate in step N has <criterion>, make no tool call:
-  work out ...; otherwise make no tool call and say they do not have <criterion>" and "If the candidate
-  in step N has <criterion>, call add_candidate with the values worked out in step M ...; otherwise make
-  no tool call and say why". The same applies to move_file and draft_email steps for those candidates.
+  "only the Python developers"), decide the criterion ONCE, in one filter step, so later steps never
+  judge it again:
+  1. Read EVERY resume, one read_file step each, before anything else. If the task screens, scores
+     or adds candidates, read job_description.md first; if it only asks who matches (e.g. "list
+     the names"), do not read it.
+  2. Write ONE filter step that checks the criterion literally and quotes the evidence: "Make no tool
+     call: list the paths of the resumes read in steps A to B whose text contains the word
+     '<criterion>'. For each listed path, quote the exact line from its resume that contains the
+     word; a path with no such line must not be listed".
+  3. Then write each resume's steps with a condition on that list that names its path: "If
+     'resumes/x.txt' is in the list from step F, make no tool call: work out ... for the candidate in
+     step N; otherwise make no tool call and say it is not in the list". Use the same "If
+     'resumes/x.txt' is in the list from step F, ..." condition for its add_candidate, move_file and
+     draft_email steps.
 - Ranking or counting questions ("top 3", "how many") need resume contents. Do NOT add anyone to the
   tracker just to rank or count: read each resume, ask the executor to state the ATS score in that
   step's result, and let later steps use it. Add to the tracker only the candidates the task asks to
@@ -91,11 +102,12 @@ Task: Add every candidate who knows Docker to the tracker.
 Plan:
 1. Call read_file with path='job_description.md'.
 2. Call read_file with path='resumes/mia_chen.txt'.
-3. If the candidate in step 2 has Docker, make no tool call: state each must-have as met or not met, the matched nice-to-haves, the ATS score and the decision, using the job description from step 1; otherwise make no tool call and say they do not have Docker.
-4. If the candidate in step 2 has Docker, call add_candidate with the values worked out in step 3, resume_file='resumes/mia_chen.txt'; otherwise make no tool call and say they do not have Docker.
-5. Call read_file with path='resumes/sam_ortiz.txt'.
-6. If the candidate in step 5 has Docker, make no tool call: state each must-have as met or not met, the matched nice-to-haves, the ATS score and the decision, using the job description from step 1; otherwise make no tool call and say they do not have Docker.
-7. If the candidate in step 5 has Docker, call add_candidate with the values worked out in step 6, resume_file='resumes/sam_ortiz.txt'; otherwise make no tool call and say they do not have Docker.
+3. Call read_file with path='resumes/sam_ortiz.txt'.
+4. Make no tool call: list the paths of the resumes read in steps 2 to 3 whose text contains the word 'Docker'. For each listed path, quote the exact line from its resume that contains the word; a path with no such line must not be listed.
+5. If 'resumes/mia_chen.txt' is in the list from step 4, make no tool call: for the candidate in step 2, using the job description from step 1, state each must-have as met or not met, the matched nice-to-haves, the ATS score and the decision; otherwise make no tool call and say it is not in the list.
+6. If 'resumes/mia_chen.txt' is in the list from step 4, call add_candidate for the candidate in step 2 with the values worked out in step 5, resume_file='resumes/mia_chen.txt'; otherwise make no tool call and say it is not in the list.
+7. If 'resumes/sam_ortiz.txt' is in the list from step 4, make no tool call: for the candidate in step 3, using the job description from step 1, state each must-have as met or not met, the matched nice-to-haves, the ATS score and the decision; otherwise make no tool call and say it is not in the list.
+8. If 'resumes/sam_ortiz.txt' is in the list from step 4, call add_candidate for the candidate in step 3 with the values worked out in step 7, resume_file='resumes/sam_ortiz.txt'; otherwise make no tool call and say it is not in the list.
 
 Task: Screen all resumes, sort them into shortlisted and rejected, and schedule interviews for the shortlisted.
 Plan:
@@ -133,6 +145,10 @@ RULES:
   could not be done and why).
 - Use ONLY what the step results show. Do not claim anything the results do not confirm.
 - If a step returned an error or was not possible, say so honestly.
+- If a file "could not be processed and was skipped", name the file, say that candidate was not
+  screened, and that the recruiter should review it by hand. Do not guess why it was skipped.
+- If a draft "could not be saved", name the candidate and say no invite was drafted for them.
+- If a later step corrected a candidate's score, report only the corrected score.
 """
 
 # Langfuse prompt name -> local text. Used by the push script and as the offline fallback.

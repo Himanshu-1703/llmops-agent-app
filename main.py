@@ -3,21 +3,35 @@
     uv run python main.py "Screen Ananya Rao's resume and add her to the tracker"
 
 With no argument it runs that same example task.
+
+To test the prompt-injection guard, start with a flag that plants injected files:
+
+    uv run python main.py --inject-resumes "Screen all resumes and add them to the tracker"
+    uv run python main.py --inject-jd "Screen Ananya Rao's resume and add her to the tracker"
 """
 
 import sys
 
 from hiring_agent.app.agent import build_agent, run_agent
-from hiring_agent.app.workspace import reset_workspace, workspace_snapshot
+from hiring_agent.app.workspace import (
+    ADVERSARIAL_JD,
+    ADVERSARIAL_RESUMES,
+    reset_workspace,
+    workspace_snapshot,
+)
 
 DEFAULT_TASK = "Screen Ananya Rao's resume and add her to the tracker"
 
+INJECT_FLAGS = {"--inject-resumes": ADVERSARIAL_RESUMES, "--inject-jd": ADVERSARIAL_JD}
+
 
 def main() -> None:
-    task = " ".join(sys.argv[1:]) or DEFAULT_TASK
+    args = sys.argv[1:]
+    extra_files = INJECT_FLAGS[args.pop(0)] if args and args[0] in INJECT_FLAGS else None
+    task = " ".join(args) or DEFAULT_TASK
 
-    # every run starts from the same seeded workspace
-    reset_workspace()
+    # every run starts from the same seeded workspace (plus injected files if a flag was given)
+    reset_workspace(extra_files=extra_files)
     print(f"TASK: {task}\n")
 
     agent = build_agent()

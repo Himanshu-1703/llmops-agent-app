@@ -3,6 +3,9 @@
 The agent is imported and invoked directly, in the same process (no HTTP yet; the
 FastAPI layer comes in Stage 6).
 
+The app works on its own workspace, workspace_app/, filled with the job description and
+resumes the user uploads. The seeded workspace/ is left to the CLI and the evals.
+
 Run from the repo root:
     uv run streamlit run src/hiring_agent/frontend/agent_app.py
 """
@@ -18,6 +21,11 @@ st.set_page_config(
     page_icon=":material/work:",
     layout="wide",
 )
+
+# Every workspace call and every agent tool in this process now uses workspace_app/.
+workspace.use_workspace(workspace.APP_WORKSPACE_DIR)
+if not workspace.APP_WORKSPACE_DIR.exists():
+    workspace.create_empty_workspace()
 
 BOX_HEIGHT = 560
 DRAFTS_HEIGHT = 260
@@ -126,7 +134,10 @@ def show_job_description() -> None:
     with st.container(border=True):
         st.markdown("**:material/work: Job description**")
         with st.container(height=BOX_HEIGHT, border=False):
-            st.markdown(smaller_headings(workspace.read_text("job_description.md")))
+            if not has_job_description():
+                st.caption("No job description yet. Upload one in the sidebar.")
+                return
+            st.markdown(smaller_headings(workspace.read_text(workspace.JD_FILE)))
 
 
 def resume_label(path: str, moved_to: set[str]) -> str:
@@ -146,7 +157,7 @@ def show_resumes(tree: dict[str, list[str]], changes: dict | None) -> None:
     with st.container(border=True):
         st.markdown(f"**:material/description: Resumes** · {len(resume_paths)}")
         if not resume_paths:
-            st.caption("No resumes in the workspace.")
+            st.caption("No resumes yet. Upload them in the sidebar.")
             return
 
         pick, preview = st.columns([1, 2])
@@ -235,12 +246,50 @@ def show_tracker(rows: list[dict]) -> None:
 
 
 # --------------------------------------------------------------------------
-# Agent panel (sidebar)
+# Uploads and agent panel (sidebar)
 # --------------------------------------------------------------------------
 
-def reset_everything() -> None:
-    """Button callback: rebuild the workspace and forget the previous runs."""
-    workspace.reset_workspace()
+def has_job_description() -> bool:
+    return (workspace.WORKSPACE_DIR / workspace.JD_FILE).is_file()
+
+
+def save_uploads(jd_file, resume_files: list) -> None:
+    """Store the uploaded files in the workspace; report what was saved and what wasn't."""
+    saved, errors = [], []
+    if jd_file is not None:
+        try:
+            saved.append(workspace.save_job_description(jd_file.name, jd_file.getvalue()))
+        except ValueError as error:
+            errors.append(f"{jd_file.name}: {error}")
+    for file in resume_files:
+        try:
+            saved.append(workspace.save_resume(file.name, file.getvalue()))
+        except ValueError as error:
+            errors.append(f"{file.name}: {error}")
+
+    if saved:
+        st.toast(f"Added {len(saved)} file(s) to the workspace.", icon=":material/upload_file:")
+    for message in errors:
+        st.warning(message, icon=":material/warning:")
+
+
+def show_upload_form() -> None:
+    """One form for the JD and the resumes, so files are saved once, on submit."""
+    with st.form("uploads", clear_on_submit=True, border=True):
+        jd_file = st.file_uploader("Job description", type=workspace.UPLOAD_TYPES)
+        resume_files = st.file_uploader(
+            "Resumes", type=workspace.UPLOAD_TYPES, accept_multiple_files=True
+        )
+        submitted = st.form_submit_button(
+            "Add to workspace", icon=":material/upload_file:", width="stretch"
+        )
+    if submitted:
+        save_uploads(jd_file, resume_files or [])
+
+
+def clear_everything() -> None:
+    """Button callback: empty the workspace and forget the previous runs."""
+    workspace.create_empty_workspace()
     st.session_state.history = []
     st.session_state.last_changes = None
     st.session_state.selected_resume = None
@@ -249,9 +298,6 @@ def reset_everything() -> None:
 
 def run_task(task: str) -> dict:
     """Run the agent on one task and record what it did to the workspace."""
-    if not workspace.WORKSPACE_DIR.exists():
-        return {"task": task, "error": "There is no workspace yet. Click Reset workspace first."}
-
     before = take_snapshot()
     try:
         state = run_agent(get_agent(), task, full=True)
@@ -305,38 +351,39 @@ if "history" not in st.session_state:
 st.title("Hiring assistant", icon=":material/work:")
 
 with st.sidebar:
-    st.header("Agent")
+    # uploads are saved here, before the main area is drawn, so new files show at once
+    st.header("Files")
+    show_upload_form()
     st.button(
-        "Reset workspace",
-        icon=":material/refresh:",
-        on_click=reset_everything,
+        "Clear workspace",
+        icon=":material/delete_sweep:",
+        on_click=clear_everything,
         width="stretch",
-        help="Rebuilds every file and the tracker from the seed data.",
+        help="Deletes the job description, every resume, draft and tracker row.",
     )
 
+    st.header("Agent")
     # the chat log sits above the input; it is filled at the end of the script
     chat_box = st.container()
-    task = st.chat_input("Describe a hiring task", submit_mode="disable")
-
-# The workspace folder only exists after the first reset.
-if workspace.WORKSPACE_DIR.exists():
-    tree = workspace.file_tree()
-    show_kpis(tree)
-    show_last_run_changes(st.session_state.last_changes)
-
-    jd_column, resumes_column = st.columns([2, 3])
-    with jd_column:
-        show_job_description()
-    with resumes_column:
-        show_resumes(tree, st.session_state.last_changes)
-
-    show_drafts(tree.get("drafts", []))
-    show_tracker(workspace.read_tracker())
-else:
-    st.info(
-        "No workspace yet. Click **Reset workspace** in the sidebar to create it.",
-        icon=":material/info:",
+    # every task starts by reading the JD, so there is nothing to do without one
+    task = st.chat_input(
+        "Describe a hiring task" if has_job_description() else "Upload a job description first",
+        submit_mode="disable",
+        disabled=not has_job_description(),
     )
+
+tree = workspace.file_tree()
+show_kpis(tree)
+show_last_run_changes(st.session_state.last_changes)
+
+jd_column, resumes_column = st.columns([2, 3])
+with jd_column:
+    show_job_description()
+with resumes_column:
+    show_resumes(tree, st.session_state.last_changes)
+
+show_drafts(tree.get("drafts", []))
+show_tracker(workspace.read_tracker())
 
 # Slow work goes last: run the agent after everything else is on screen.
 with chat_box:
