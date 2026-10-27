@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hiring agent · Guarded DFD</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --paper: #141414; --ink: #f2f2f2; --muted: #9a9a9a; --soft: #6e6e6e;
+      --guard: #7fc79a; --focal: #e8b84a; --block: #e0574b;
+      --sans: 'Geist', system-ui, sans-serif; --serif: 'Instrument Serif', serif;
+      --mono: 'Geist Mono', ui-monospace, monospace;
+    }
+    body { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 3rem 1rem; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+    .frame { width: 100%; max-width: 1780px; }
+    .eyebrow { margin-bottom: 0.5rem; color: var(--muted); font: 500 0.66rem var(--mono); letter-spacing: 0.18em; text-transform: uppercase; }
+    h1 { margin-bottom: 1.5rem; font: 400 clamp(1.5rem, 2.4vw + 0.75rem, 2rem)/1.15 var(--serif); letter-spacing: -0.02em; }
+    .scroll { overflow-x: auto; }
+    svg { display: block; width: 100%; min-width: 1732px; }
+    .note { margin-top: 1rem; color: var(--muted); font: italic 400 0.95rem/1.4 var(--serif); }
+
+    .tag { font: 600 10px var(--mono); letter-spacing: 0.16em; text-anchor: middle; }
+    .tag-ext { fill: var(--ink); }
+    .tag-guard { fill: var(--guard); }
+    .tag-proc { fill: var(--muted); }
+    .tag-focal { fill: var(--focal); }
+    .name { fill: var(--ink); font: 600 19px var(--sans); text-anchor: middle; }
+    .sub { fill: var(--muted); font: 400 11px var(--mono); text-anchor: middle; }
+    .lbl { fill: #b0b0b0; font: 500 10px var(--mono); letter-spacing: 0.08em; text-anchor: middle; }
+    .lbl-start { text-anchor: start; }
+    .lbl-end { text-anchor: end; }
+    .lbl-block { fill: var(--block); }
+    .zone { fill: var(--muted); font: 500 11px var(--mono); letter-spacing: 0.14em; }
+    .hand { fill: var(--block); font: italic 400 26px var(--serif); text-anchor: end; }
+    .leg-head { fill: var(--muted); font: 500 11px var(--mono); letter-spacing: 0.14em; }
+    .pill-txt { fill: var(--guard); font: 600 11px var(--mono); text-anchor: middle; }
+    .leg-name { fill: var(--ink); font: 600 15px var(--sans); }
+    .leg-txt { fill: #c8c8c8; font: 400 14px var(--sans); }
+    .leg-foot { fill: var(--muted); font: 400 11px var(--mono); }
+  </style>
+</head>
+<body>
+  <main class="frame">
+    <p class="eyebrow">Data flow · Guardrails · src/hiring_agent/app</p>
+    <h1>Hiring agent · Where each guard sits in the agent graph</h1>
+
+    <div class="scroll">
+    <svg viewBox="0 0 1732 772" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="agent-guarded-dfd-title agent-guarded-dfd-desc">
+      <title id="agent-guarded-dfd-title">Hiring agent guarded data flow</title>
+      <desc id="agent-guarded-dfd-desc">The recruiter's task passes the input guard, the planner writes a plan, the action guard checks it, the executor runs each step with tools guarded for resumes, drafts and deletes, the score check adds fix steps for wrong scores, and the responder answers; a blocked input or action guard returns one generic message.</desc>
+      <defs>
+        <marker id="dfd-arr" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L8 4 L0 8 Z" fill="#8a8a8a"/></marker>
+        <marker id="dfd-arr-block" markerWidth="10" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0 0 L10 5 L0 10 Z" fill="#e0574b"/></marker>
+      </defs>
+      <rect width="1732" height="772" fill="#141414"/>
+
+      <!-- Zone captions and hand title -->
+      <text x="36" y="72" class="zone">TASK PATH · EVERY RUN</text>
+      <text x="1696" y="56" class="hand">DFD of the hiring agent</text>
+      <text x="900" y="756" class="zone">TOOL PATH · INSIDE EVERY EXECUTOR STEP</text>
+
+      <!-- ============ CONNECTORS (drawn before nodes) ============ -->
+
+      <!-- Blocked bus: input_guard / action_guard -> guard_fallback -> final answer -->
+      <g fill="none" stroke="#e0574b" stroke-width="1.5" stroke-dasharray="5,4">
+        <path d="M326 258 V158 Q326 150 334 150 H1614 Q1622 150 1622 158 V256" marker-end="url(#dfd-arr-block)"/>
+        <path d="M758 258 V150"/>
+      </g>
+      <circle cx="758" cy="150" r="3.5" fill="#e0574b"/>
+      <rect x="500" y="128" width="84" height="14" fill="#141414"/>
+      <text x="542" y="139" class="lbl lbl-block">BLOCKED</text>
+      <rect x="886" y="128" width="608" height="14" fill="#141414"/>
+      <text x="1190" y="139" class="lbl lbl-block">BLOCKED → guard_fallback → "This request cannot be processed. Please try again."</text>
+
+      <!-- Executor sub-agent frame (behind the label masks) -->
+      <rect x="876" y="176" width="196" height="196" rx="20" fill="none" stroke="#bdbdbd" stroke-width="1.2" stroke-dasharray="4,4"/>
+
+      <!-- Main path -->
+      <g fill="none" stroke="#8a8a8a" stroke-width="1.5">
+        <line x1="184" y1="300" x2="250" y2="300" marker-end="url(#dfd-arr)"/>
+        <line x1="400" y1="300" x2="466" y2="300" marker-end="url(#dfd-arr)"/>
+        <line x1="616" y1="300" x2="682" y2="300" marker-end="url(#dfd-arr)"/>
+        <line x1="832" y1="300" x2="898" y2="300" marker-end="url(#dfd-arr)"/>
+        <line x1="1048" y1="286" x2="1114" y2="286" marker-end="url(#dfd-arr)"/>
+        <line x1="1264" y1="300" x2="1330" y2="300" marker-end="url(#dfd-arr)"/>
+        <line x1="1480" y1="300" x2="1546" y2="300" marker-end="url(#dfd-arr)"/>
+      </g>
+      <!-- Score check correction loop (dashed return) -->
+      <line x1="1116" y1="314" x2="1050" y2="314" fill="none" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5,4" marker-end="url(#dfd-arr)"/>
+
+      <g>
+        <rect x="200" y="280" width="36" height="12" fill="#141414"/><text x="218" y="290" class="lbl">TASK</text>
+        <rect x="422" y="280" width="24" height="12" fill="#141414"/><text x="434" y="290" class="lbl">OK</text>
+        <rect x="632" y="280" width="36" height="12" fill="#141414"/><text x="650" y="290" class="lbl">PLAN</text>
+        <rect x="854" y="280" width="24" height="12" fill="#141414"/><text x="866" y="290" class="lbl">OK</text>
+        <rect x="1052" y="266" width="60" height="12" fill="#141414"/><text x="1082" y="276" class="lbl">ALL DONE</text>
+        <rect x="1050" y="322" width="64" height="12" fill="#141414"/><text x="1082" y="332" class="lbl">FIX STEPS</text>
+        <rect x="1266" y="280" width="64" height="12" fill="#141414"/><text x="1298" y="290" class="lbl">SCORES OK</text>
+        <rect x="1490" y="280" width="48" height="12" fill="#141414"/><text x="1514" y="290" class="lbl">ANSWER</text>
+      </g>
+
+      <!-- Executor sub-agent frame and per-step loop -->
+      <text x="974" y="196" class="tag tag-proc">SUB-AGENT · ReAct</text>
+      <path d="M1004 258 V240 Q1004 232 996 232 H952 Q944 232 944 240 V256" fill="none" stroke="#8a8a8a" stroke-width="1.5" marker-end="url(#dfd-arr)"/>
+      <text x="974" y="222" class="lbl">NEXT STEP</text>
+
+      <!-- Tool path: executor <-> tool guards <-> workspace -->
+      <g fill="none" stroke="#8a8a8a" stroke-width="1.5">
+        <line x1="974" y1="460" x2="974" y2="344" marker-end="url(#dfd-arr)"/>
+        <path d="M1006 342 V404 Q1006 412 1014 412 H1182 Q1190 412 1190 420 V458" marker-end="url(#dfd-arr)"/>
+        <path d="M1036 342 V380 Q1036 388 1044 388 H1398 Q1406 388 1406 396 V458" marker-end="url(#dfd-arr)"/>
+        <line x1="974" y1="620" x2="974" y2="546" marker-end="url(#dfd-arr)"/>
+        <line x1="1190" y1="544" x2="1190" y2="618" marker-end="url(#dfd-arr)"/>
+        <line x1="1406" y1="544" x2="1406" y2="618" marker-end="url(#dfd-arr)"/>
+      </g>
+      <g>
+        <rect x="868" y="420" width="96" height="12" fill="#141414"/><text x="964" y="430" class="lbl lbl-end">CHECKED TEXT</text>
+        <rect x="1198" y="430" width="44" height="12" fill="#141414"/><text x="1198" y="440" class="lbl lbl-start">DRAFT</text>
+        <rect x="1414" y="420" width="52" height="12" fill="#141414"/><text x="1414" y="430" class="lbl lbl-start">DELETE</text>
+        <rect x="982" y="576" width="80" height="12" fill="#141414"/><text x="982" y="586" class="lbl lbl-start">RAW RESUME</text>
+        <rect x="1198" y="576" width="80" height="12" fill="#141414"/><text x="1198" y="586" class="lbl lbl-start">SAFE DRAFT</text>
+        <rect x="1414" y="576" width="64" height="12" fill="#141414"/><text x="1414" y="586" class="lbl lbl-start">ALLOWED</text>
+      </g>
+
+      <!-- ============ NODES ============ -->
+
+      <!-- External: recruiter -->
+      <rect x="36" y="258" width="148" height="84" fill="#1c1c1c" stroke="#d0d0d0" stroke-width="1.5"/>
+      <text x="110" y="284" class="tag tag-ext">EXTERNAL</text>
+      <text x="110" y="310" class="name">Recruiter</text>
+      <text x="110" y="330" class="sub">hiring task</text>
+
+      <!-- Guard L1: input_guard -->
+      <rect x="252" y="258" width="148" height="84" rx="24" fill="#16261c" stroke="#6fb58a" stroke-width="1.5"/>
+      <text x="326" y="284" class="tag tag-guard">GUARD · LAYER 1</text>
+      <text x="326" y="310" class="name">Input guard</text>
+      <text x="326" y="330" class="sub">task + JD · Jev</text>
+
+      <!-- Process: planner -->
+      <rect x="468" y="258" width="148" height="84" rx="24" fill="#1a1b26" stroke="#4a4d63" stroke-width="1.5"/>
+      <text x="542" y="284" class="tag tag-proc">PROCESS · LLM</text>
+      <text x="542" y="310" class="name">Planner</text>
+      <text x="542" y="330" class="sub">writes the plan</text>
+
+      <!-- Guard L3: action_guard -->
+      <rect x="684" y="258" width="148" height="84" rx="24" fill="#16261c" stroke="#6fb58a" stroke-width="1.5"/>
+      <text x="758" y="284" class="tag tag-guard">GUARD · LAYER 3</text>
+      <text x="758" y="310" class="name">Action guard</text>
+      <text x="758" y="330" class="sub">plan · Jev</text>
+
+      <!-- Process (focal): executor -->
+      <rect x="900" y="258" width="148" height="84" rx="24" fill="#2a2112" stroke="#e0b040" stroke-width="1.5"/>
+      <text x="974" y="284" class="tag tag-focal">PROCESS · LLM</text>
+      <text x="974" y="310" class="name">Executor</text>
+      <text x="974" y="330" class="sub">one step per visit</text>
+
+      <!-- Guard L4b: score_check -->
+      <rect x="1116" y="258" width="148" height="84" rx="24" fill="#16261c" stroke="#6fb58a" stroke-width="1.5"/>
+      <text x="1190" y="284" class="tag tag-guard">GUARD · LAYER 4B</text>
+      <text x="1190" y="310" class="name">Score check</text>
+      <text x="1190" y="330" class="sub">LLM + calculator</text>
+
+      <!-- Process: responder -->
+      <rect x="1332" y="258" width="148" height="84" rx="24" fill="#1a1b26" stroke="#4a4d63" stroke-width="1.5"/>
+      <text x="1406" y="284" class="tag tag-proc">PROCESS · LLM</text>
+      <text x="1406" y="310" class="name">Responder</text>
+      <text x="1406" y="330" class="sub">writes the answer</text>
+
+      <!-- External: final answer -->
+      <rect x="1548" y="258" width="148" height="84" fill="#1c1c1c" stroke="#d0d0d0" stroke-width="1.5"/>
+      <text x="1622" y="284" class="tag tag-ext">EXTERNAL</text>
+      <text x="1622" y="310" class="name">Final answer</text>
+      <text x="1622" y="330" class="sub">to the recruiter</text>
+
+      <!-- Guard L2: resume guard in read_file -->
+      <rect x="900" y="460" width="148" height="84" rx="24" fill="#16261c" stroke="#6fb58a" stroke-width="1.5"/>
+      <text x="974" y="486" class="tag tag-guard">GUARD · LAYER 2</text>
+      <text x="974" y="512" class="name">Resume guard</text>
+      <text x="974" y="532" class="sub">read_file · Jev</text>
+
+      <!-- Guard L4a: draft guard in draft_email -->
+      <rect x="1116" y="460" width="148" height="84" rx="24" fill="#16261c" stroke="#6fb58a" stroke-width="1.5"/>
+      <text x="1190" y="486" class="tag tag-guard">GUARD · LAYER 4A</text>
+      <text x="1190" y="512" class="name">Draft guard</text>
+      <text x="1190" y="532" class="sub">draft_email · Jev</text>
+
+      <!-- Guard L3 (runtime half): delete cap in delete_file -->
+      <rect x="1332" y="460" width="148" height="84" rx="24" fill="#16261c" stroke="#6fb58a" stroke-width="1.5"/>
+      <text x="1406" y="486" class="tag tag-guard">GUARD · LAYER 3</text>
+      <text x="1406" y="512" class="name">Delete cap</text>
+      <text x="1406" y="532" class="sub">delete_file · max 2</text>
+
+      <!-- Data store: workspace -->
+      <rect x="900" y="620" width="580" height="80" fill="#1c1c1c"/>
+      <line x1="900" y1="620" x2="1480" y2="620" stroke="#d0d0d0" stroke-width="1.5"/>
+      <line x1="900" y1="700" x2="1480" y2="700" stroke="#d0d0d0" stroke-width="1.5"/>
+      <text x="1190" y="644" class="tag tag-ext">DATA STORE</text>
+      <text x="1190" y="670" class="name">Workspace</text>
+      <text x="1190" y="690" class="sub">resumes/ · job_description.md · candidates.csv · drafts/</text>
+
+      <!-- ============ LEGEND ============ -->
+      <text x="48" y="456" class="leg-head">SECURITY LAYERS · IN SIMPLE WORDS</text>
+      <line x1="48" y1="468" x2="840" y2="468" stroke="rgba(242,242,242,0.14)" stroke-width="1"/>
+
+      <g>
+        <rect x="48" y="484" width="48" height="24" rx="12" fill="#16261c" stroke="#6fb58a" stroke-width="1.2"/>
+        <text x="72" y="500" class="pill-txt">L1</text>
+        <text x="112" y="501" class="leg-name">Input guard</text>
+        <text x="256" y="501" class="leg-txt">turns away tricks, off-topic or biased tasks, and a JD with hidden orders.</text>
+
+        <rect x="48" y="524" width="48" height="24" rx="12" fill="#16261c" stroke="#6fb58a" stroke-width="1.2"/>
+        <text x="72" y="540" class="pill-txt">L2</text>
+        <text x="112" y="541" class="leg-name">Resume guard</text>
+        <text x="256" y="541" class="leg-txt">a resume with text aimed at the AI is withheld from the model.</text>
+
+        <rect x="48" y="564" width="48" height="24" rx="12" fill="#16261c" stroke="#6fb58a" stroke-width="1.2"/>
+        <text x="72" y="580" class="pill-txt">L3</text>
+        <text x="112" y="581" class="leg-name">Action guard</text>
+        <text x="256" y="581" class="leg-txt">a run deletes 2 files at most, never the JD or the tracker.</text>
+
+        <rect x="48" y="604" width="48" height="24" rx="12" fill="#16261c" stroke="#6fb58a" stroke-width="1.2"/>
+        <text x="72" y="620" class="pill-txt">L4a</text>
+        <text x="112" y="621" class="leg-name">Draft guard</text>
+        <text x="256" y="621" class="leg-txt">a draft that names age, family or extra contacts is not saved.</text>
+
+        <rect x="48" y="644" width="48" height="24" rx="12" fill="#16261c" stroke="#6fb58a" stroke-width="1.2"/>
+        <text x="72" y="660" class="pill-txt">L4b</text>
+        <text x="112" y="661" class="leg-name">Score check</text>
+        <text x="256" y="661" class="leg-txt">an LLM lists the points, a calculator adds them; a wrong score gets a fix step.</text>
+      </g>
+      <text x="48" y="708" class="leg-foot">Jev answers yes/no questions with a probability; code compares it with a threshold.</text>
+      <text x="48" y="726" class="leg-foot">If Jev cannot be reached, the guard blocks. It never passes by default.</text>
+    </svg>
+    </div>
+
+    <p class="note">Graph from <code>agent.py</code>; guards from <code>guards.py</code> and <code>tools.py</code>. Solid arrows carry data, dashed arrows loop back or block.</p>
+  </main>
+</body>
+</html>

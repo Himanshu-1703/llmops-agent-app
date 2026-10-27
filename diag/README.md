@@ -26,3 +26,9 @@ Two dark-theme diagrams of the guardrails, made with the diagram-design skill. O
   goes in and out of each node.
 - [`guardrail_layers.html`](guardrail_layers.html): the guard layers L1 to L4b. For each layer: where it is
   enforced, when it runs, what it checks (with thresholds), who decides and what happens on fail.
+- [`agent_guarded_dfd.html`](agent_guarded_dfd.html): the whole agent graph as one DFD, styled
+  like the RAG app's "After RAG" diagram. The top row is the task path (input guard → planner →
+  action guard → executor → score check → responder), with the red dashed BLOCKED path to
+  `guard_fallback`. The bottom row is the tool path inside every executor step (resume guard in
+  `read_file`, draft guard in `draft_email`, delete cap in `delete_file`). A legend explains
+  each layer in plain words.
