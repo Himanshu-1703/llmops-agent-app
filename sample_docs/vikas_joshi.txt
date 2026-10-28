@@ -1,0 +1,5 @@
+Name: Vikas Joshi
+Email: vikas.joshi@example.com
+Experience: 4 years, Business Analyst at Freshbasket Groceries
+Skills: Python, SQL, Statistics (hypothesis testing), Excel, Tableau
+Projects: Weekly sales reporting in Tableau; hypothesis tests on store promotions

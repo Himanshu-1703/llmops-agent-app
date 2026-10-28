@@ -1,0 +1,5 @@
+Name: Kavya Reddy
+Email: kavya.reddy@example.com
+Experience: 2 years, Junior Data Scientist at Chatterly AI
+Skills: Python, SQL, scikit-learn, Statistics (A/B testing), PyTorch, NLP
+Projects: Fine-tuned a PyTorch intent classifier for support chats; A/B tested reply suggestions

@@ -1,0 +1,5 @@
+Name: Rahul Verma
+Email: rahul.verma@example.com
+Experience: 6 years, Machine Learning Engineer at Streamly Media
+Skills: Python, scikit-learn, Statistics (hypothesis testing), Spark, AWS, Docker
+Projects: Built a content recommendation model on Spark; deployed models with Docker on AWS

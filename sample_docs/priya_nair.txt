@@ -1,0 +1,5 @@
+Name: Priya Nair
+Email: priya.nair@example.com
+Experience: 5 years, Data Scientist at Cartwheel Retail
+Skills: Python, SQL, scikit-learn, Statistics (A/B testing), PyTorch, NLP, AWS, Docker
+Projects: Built a product-review sentiment model in PyTorch; ran A/B tests on checkout changes

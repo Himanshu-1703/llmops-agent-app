@@ -1,0 +1,4 @@
+Name: Sneha Iyer
+Experience: 3 years, Data Analyst turned Data Scientist at Medisure Health
+Skills: Python, SQL, scikit-learn, Statistics (A/B testing)
+Projects: Predicted appointment no-shows with scikit-learn; designed A/B tests for patient reminders

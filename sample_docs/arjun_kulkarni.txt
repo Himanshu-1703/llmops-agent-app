@@ -1,0 +1,5 @@
+Name: Arjun Kulkarni
+Email: arjun.kulkarni@example.com
+Experience: 4 years, Data Scientist at Lendwise Finance
+Skills: Python, SQL, XGBoost, Statistics (hypothesis testing), Spark, Tableau
+Projects: Built a loan default model with XGBoost on Spark; Tableau dashboards for the risk team

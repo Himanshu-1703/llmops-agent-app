@@ -1,0 +1,5 @@
+Name: Meera Pillai
+Email: meera.pillai@example.com
+Experience: 7 years, Senior Data Scientist at Voyagio Travel
+Skills: Python, SQL, LightGBM, Statistics (A/B testing), PyTorch, NLP, Spark, AWS, Docker, Tableau
+Projects: Dynamic pricing model with LightGBM on Spark; NLP review tagging in PyTorch; ran 40+ A/B tests
