@@ -4,7 +4,11 @@ Each run logs:
     params     everything in params.yaml (flattened), the Langfuse prompt versions, the judge model
     metrics    the average score of every eval metric, rounded to 2 decimals (as in the report's Aggregate table)
     artifacts  golden_dataset/  reports/  traces/  prompts/  code/
-    tag        phase = noise_threshold
+    tag        stage = challenger (the CI gates compare it with the stage = champion run)
+
+Only one challenger exists at a time: a leftover one (e.g. from a crashed CI run) is
+un-tagged before the new run starts. The 3 noise runs (phase = noise_threshold) were logged
+before this tag existed; they are the only runs with that tag.
 
 Run (from the project root):
     uv run python -m hiring_agent.experimentation.execute_experiment_pipeline              # all goldens
@@ -18,7 +22,6 @@ import re
 import time
 from pathlib import Path
 
-import dagshub
 import mlflow
 
 from hiring_agent.config.parameter_config import PARAMS_PATH, ROOT_DIR, params_config
@@ -26,12 +29,7 @@ from hiring_agent.app.prompts import EXECUTOR_PROMPT_NAME, PLANNER_PROMPT_NAME, 
 from hiring_agent.evals.eval_agent import GOLDENS_PATH, run_eval
 from hiring_agent.evals.metrics import JUDGE_MODEL, TRACES_DIR
 from hiring_agent.evals.report import metric_averages
-
-REPO_OWNER = "himanshu1703"
-REPO_NAME = "llmops-agent-app"
-TRACKING_URI = "https://dagshub.com/himanshu1703/llmops-agent-app.mlflow"
-EXPERIMENT_NAME = "hiring-agent"
-PHASE_TAG = "noise_threshold"  # repeated runs of the same config, used later to measure noise
+from hiring_agent.utils.mlflow_utils import CHALLENGER, TRACKING_URI, demote_stale_challengers, init_mlflow, set_stage
 
 # the folders whose code is saved with every run
 CODE_DIRS = ["app", "config", "evals"]
@@ -96,12 +94,15 @@ if __name__ == "__main__":
     parser.add_argument("--only", type=int, nargs="+", help="run only these golden numbers (1-based)")
     args = parser.parse_args()
 
-    dagshub.init(repo_owner=REPO_OWNER, repo_name=REPO_NAME, mlflow=True)
-    mlflow.set_tracking_uri(TRACKING_URI)
-    mlflow.set_experiment(EXPERIMENT_NAME)
+    experiment_id = init_mlflow()
+
+    # this run becomes the new challenger, so clear the tag off any leftover one first
+    stale = demote_stale_challengers(experiment_id)
+    if stale:
+        print(f"Cleared the {CHALLENGER} tag from {stale} leftover run(s)")
 
     with mlflow.start_run() as run:
-        mlflow.set_tag("phase", PHASE_TAG)
+        set_stage(run.info.run_id, CHALLENGER)
 
         # params: params.yaml + the prompt versions actually fetched + the judge model
         prompt_versions, prompt_texts = prompt_versions_and_texts()

@@ -17,6 +17,7 @@ dependencies = [
     "langfuse>=4.17.0",
     "langgraph>=1.2.6",
     "mlflow>=3.17.2",
+    "numpy>=2.5.3",
     "pydantic>=2.13.5",
     "pypdf>=6.21.2",
     "python-dotenv>=1.2.2",
@@ -33,3 +34,8 @@ build-backend = "uv_build"
 # the package folder is src/hiring_agent, which differs from the project name
 [tool.uv.build-backend]
 module-name = "hiring_agent"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

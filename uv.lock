@@ -2379,6 +2379,7 @@ dependencies = [
     { name = "langfuse" },
     { name = "langgraph" },
     { name = "mlflow" },
+    { name = "numpy" },
     { name = "pydantic" },
     { name = "pypdf" },
     { name = "python-dotenv" },
@@ -2386,6 +2387,11 @@ dependencies = [
     { name = "requests" },
     { name = "streamlit" },
     { name = "typesafe-sdk" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
 ]
 
 [package.metadata]
@@ -2399,6 +2405,7 @@ requires-dist = [
     { name = "langfuse", specifier = ">=4.17.0" },
     { name = "langgraph", specifier = ">=1.2.6" },
     { name = "mlflow", specifier = ">=3.17.2" },
+    { name = "numpy", specifier = ">=2.5.3" },
     { name = "pydantic", specifier = ">=2.13.5" },
     { name = "pypdf", specifier = ">=6.21.2" },
     { name = "python-dotenv", specifier = ">=1.2.2" },
@@ -2407,6 +2414,9 @@ requires-dist = [
     { name = "streamlit", specifier = ">=1.62.0" },
     { name = "typesafe-sdk", specifier = ">=0.7.5" },
 ]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.1.1" }]
 
 [[package]]
 name = "lxml"

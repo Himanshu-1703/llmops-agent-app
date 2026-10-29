@@ -1,0 +1,8 @@
+{
+    "noise_thresholds": {
+        "plan_adherence_custom": 0.032145502536643174,
+        "plan_quality_sees_workspace": 0.017320508075688787,
+        "task_completion": 0.0529150262212918,
+        "tool_correctness": 0.06350852961085883
+    }
+}
