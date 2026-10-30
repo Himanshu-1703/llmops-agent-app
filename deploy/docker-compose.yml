@@ -1,0 +1,25 @@
+services:
+  api:
+    image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/hiring-agent-api:latest
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      # Tracing is off by default (CLI, evals, CI); the deployed API traces every run,
+      # tagged "production" so it is kept apart from local "development" traces.
+      - LANGFUSE_TRACING_ENABLED=true
+      - LANGFUSE_TRACING_ENVIRONMENT=production
+    restart: unless-stopped
+
+  frontend:
+    image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/hiring-agent-frontend:latest
+    ports:
+      - "8501:8501"
+    environment:
+      # Inside the compose network the API is reachable by its service name.
+      # The frontend only sends HTTP requests, so it needs no keys and no .env.
+      - API_BASE_URL=http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped

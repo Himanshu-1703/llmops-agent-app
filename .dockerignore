@@ -1,0 +1,34 @@
+# Keep the build context small and secrets / local state out of the images.
+.git
+.github/
+.venv/
+.env
+**/__pycache__/
+*.pyc
+.pytest_cache/
+
+# Claude Code and teaching notes
+.claude/
+.agents/
+CLAUDE.md
+docs/
+
+# Eval, experiment and CI machinery -- not part of the served app
+.deepeval/
+tests/
+goldens/
+eval_results/
+thresholds.json
+src/hiring_agent/evals/
+src/hiring_agent/experimentation/
+src/hiring_agent/utils/
+
+# Diagrams, sample uploads and the CLI
+diag/
+sample_docs/
+main.py
+
+# Local workspaces (the API creates its own empty workspace_app/ at start-up)
+workspace/
+workspace_original/
+workspace_app/

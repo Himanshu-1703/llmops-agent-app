@@ -17,11 +17,18 @@ them, so they are easy to find and change. They were tested against the live API
 
 One exception to "Jev decides": the score check (Layer 4b) uses an LLM plus a calculator
 tool, because the scoring rule comes from the JD and can change.
+
+Tracing (Stage 8): each wrapper function opens a Langfuse "guardrail" span. Jev is called
+through the TypeSafe SDK, not LangChain, so the agent's callback handler can't see it;
+the span shows Jev's answers and is marked ERROR when the guard blocks.
 """
+
+from contextlib import contextmanager
 
 from dotenv import load_dotenv
 from guardrails import Guard
 from guardrails.classes import ValidationOutcome
+from guardrails.errors import ValidationError
 from guardrails.validators import (
     FailResult,
     PassResult,
@@ -31,13 +38,17 @@ from guardrails.validators import (
 )
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
+from langfuse import get_client
 from pydantic import BaseModel, Field
-from typesafe_sdk import Noul, TypeSafeClient
+from typesafe_sdk import Noul, TypeSafeClient, TypeSafeError
 
 from hiring_agent.app.workspace import PROTECTED_FILES
 
-# load TYPESAFE_API_KEY from .env
+# load TYPESAFE_API_KEY (and LANGFUSE_TRACING_ENABLED) from .env
 load_dotenv()
+
+# With LANGFUSE_TRACING_ENABLED=false (CLI, evals, CI) the spans below record nothing.
+langfuse = get_client()
 
 # What the user sees whenever any guard blocks. It is the same for every guard, so an
 # attacker can't tell which check caught them. The real reason goes to the log.
@@ -55,6 +66,23 @@ def ask_jev(state: dict, questions: dict[str, Noul]) -> dict[str, float]:
     """
     response = jev_client.system_one(state=state, questions=questions)
     return {question_id: response.nouls[question_id].noul for question_id in questions}
+
+
+@contextmanager
+def guard_span(name: str, input, metadata: dict | None = None):
+    """Open a Langfuse guardrail span around one guard check.
+
+    A block (ValidationError) or a failed Jev call (TypeSafeError) marks the span ERROR
+    and is re-raised unchanged, so the graph node or tool handles it exactly as before.
+    """
+    with langfuse.start_as_current_observation(
+        as_type="guardrail", name=name, input=input, metadata=metadata
+    ) as span:
+        try:
+            yield span
+        except (ValidationError, TypeSafeError) as error:
+            span.update(level="ERROR", status_message=str(error))
+            raise
 
 
 # --------------------------------------------------------------------------
@@ -172,9 +200,11 @@ input_guard = Guard().use(
 
 
 def validate_input(task: str) -> ValidationOutcome:
-    # one Jev request for all four questions; the validators read the answers from metadata
-    answers = ask_jev(state={"task": task}, questions=TASK_QUESTIONS)
-    return input_guard.validate(task, metadata={"task_answers": answers})
+    with guard_span("input-guard", input=task) as span:
+        # one Jev request for all four questions; the validators read the answers from metadata
+        answers = ask_jev(state={"task": task}, questions=TASK_QUESTIONS)
+        span.update(output=answers)
+        return input_guard.validate(task, metadata={"task_answers": answers})
 
 
 # --------------------------------------------------------------------------
@@ -260,8 +290,10 @@ document_guard = Guard().use(
 def validate_document(text: str, *, path: str) -> ValidationOutcome:
     # the path decides which question set Jev gets; one request per document
     questions = JD_QUESTIONS if path == JD_PATH else RESUME_QUESTIONS
-    answers = ask_jev(state={"document": text}, questions=questions)
-    return document_guard.validate(text, metadata={"path": path, "document_answers": answers})
+    with guard_span("document-guard", input=text, metadata={"path": path}) as span:
+        answers = ask_jev(state={"document": text}, questions=questions)
+        span.update(output=answers)
+        return document_guard.validate(text, metadata={"path": path, "document_answers": answers})
 
 
 # --------------------------------------------------------------------------
@@ -365,8 +397,10 @@ def validate_plan(plan: list[str]) -> ValidationOutcome:
     questions = {}
     for step_id in steps:
         questions.update(delete_questions(step_id))
-    answers = ask_jev(state={"plan": steps}, questions=questions)
-    return action_guard.validate("\n".join(plan), metadata={"plan_steps": steps, "delete_answers": answers})
+    with guard_span("action-guard", input=steps) as span:
+        answers = ask_jev(state={"plan": steps}, questions=questions)
+        span.update(output=answers)
+        return action_guard.validate("\n".join(plan), metadata={"plan_steps": steps, "delete_answers": answers})
 
 
 # --------------------------------------------------------------------------
@@ -428,12 +462,12 @@ draft_guard = Guard().use(
 
 
 def validate_draft(to: str, subject: str, body: str) -> ValidationOutcome:
-    # one request for both questions; the validator reads the answers from metadata
-    answers = ask_jev(
-        state={"draft": {"to": to, "subject": subject, "body": body}},
-        questions=DRAFT_QUESTIONS,
-    )
-    return draft_guard.validate(body, metadata={"to": to, "draft_answers": answers})
+    draft = {"to": to, "subject": subject, "body": body}
+    with guard_span("draft-guard", input=draft) as span:
+        # one request for both questions; the validator reads the answers from metadata
+        answers = ask_jev(state={"draft": draft}, questions=DRAFT_QUESTIONS)
+        span.update(output=answers)
+        return draft_guard.validate(body, metadata={"to": to, "draft_answers": answers})
 
 
 # --------------------------------------------------------------------------
@@ -516,8 +550,16 @@ score_guard = Guard().use(
 
 
 def validate_score(row: dict, *, resume: str, job_description: str) -> ValidationOutcome:
-    # one LLM call per tracker row
-    return score_guard.validate(resume, metadata={"row": row, "job_description": job_description})
+    with guard_span("score-check", input=row) as span:
+        # one LLM call per tracker row
+        outcome = score_guard.validate(resume, metadata={"row": row, "job_description": job_description})
+        if outcome.validation_passed:
+            span.update(output={"passed": True, "fit_score": row["fit_score"]})
+        else:
+            # on_fail="refrain": not a block, the run goes on and a correction step fixes the row
+            reason = outcome.validation_summaries[0].failure_reason
+            span.update(output={"passed": False, "reason": reason}, level="WARNING", status_message=reason)
+        return outcome
 
 
 class DeleteLimit:

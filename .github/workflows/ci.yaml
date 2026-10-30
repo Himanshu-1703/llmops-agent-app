@@ -40,6 +40,9 @@ jobs:
       LANGFUSE_PUBLIC_KEY: ${{ secrets.LANGFUSE_PUBLIC_KEY }}
       LANGFUSE_SECRET_KEY: ${{ secrets.LANGFUSE_SECRET_KEY }}
       LANGFUSE_BASE_URL: ${{ vars.LANGFUSE_BASE_URL }}
+      # Langfuse is still used to fetch prompts, but the eval runs send no traces: the
+      # guard spans have no root span here, so each one would become its own trace.
+      LANGFUSE_TRACING_ENABLED: "false"
       # No interactive prompt / phone-home from DeepEval in CI.
       DEEPEVAL_TELEMETRY_OPT_OUT: "YES"
     steps:
