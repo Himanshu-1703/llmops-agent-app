@@ -233,3 +233,6 @@ workspace/
 workspace_original/
 # Streamlit app sandbox -- filled with the user's uploads
 workspace_app/
+
+# Online evals -- local checkpoint of the last scored time
+eval_checkpoint.json

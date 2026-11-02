@@ -1,6 +1,14 @@
+# Hiring Assistant agent - EC2 deployment compose file.
+#
+# Shipped inside the CodeDeploy revision bundle (see appspec.yml next to it) and
+# copied to /opt/hiring-agent/docker-compose.yml on each instance. Images are
+# pulled from ECR (pushed by .github/workflows/cd.yaml), never built here.
+# The api's .env is written next to this file by scripts/application_start.sh
+# from the `hiring-agent-api-keys` Secrets Manager secret.
+
 services:
   api:
-    image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/hiring-agent-api:latest
+    image: 891377050051.dkr.ecr.ap-south-1.amazonaws.com/hiring-agent-api:latest
     ports:
       - "8000:8000"
     env_file:
@@ -13,7 +21,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    image: <AWS_ACCOUNT_ID>.dkr.ecr.ap-south-1.amazonaws.com/hiring-agent-frontend:latest
+    image: 891377050051.dkr.ecr.ap-south-1.amazonaws.com/hiring-agent-frontend:latest
     ports:
       - "8501:8501"
     environment:

@@ -13,6 +13,11 @@ env:
   AWS_REGION: ap-south-1
   ECR_API_REPOSITORY: hiring-agent-api
   ECR_FRONTEND_REPOSITORY: hiring-agent-frontend
+  # CodeDeploy rollout (see deploy/codedeploy/ and codedeploy_steps.md). These
+  # names are contractual -- the console resources must match them exactly.
+  DEPLOY_BUCKET: hiring-agent-codedeploy
+  CODEDEPLOY_APP: hiring-agent
+  CODEDEPLOY_GROUP: hiring-agent-dg
 
 jobs:
   build-and-push:
@@ -54,7 +59,7 @@ jobs:
         run: echo "sha=${{ github.event.workflow_run.head_sha || github.sha }}" >> "$GITHUB_OUTPUT"
 
       # Each image gets two tags: the commit SHA (to know exactly what is running, and
-      # to roll back) and `latest` (what deploy/docker-compose.yml pulls).
+      # to roll back) and `latest` (what deploy/codedeploy/docker-compose.yml pulls).
       # The GitHub Actions cache keeps unchanged layers (e.g. the dependency install)
       # between runs, so a code-only change builds fast.
       - name: Build & push API image
@@ -88,3 +93,58 @@ jobs:
           echo "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_API_REPOSITORY }}:${{ steps.vars.outputs.sha }}" >> "$GITHUB_STEP_SUMMARY"
           echo "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_FRONTEND_REPOSITORY }}:${{ steps.vars.outputs.sha }}" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+  # Copied from the RAG app: zip deploy/codedeploy/ (appspec + compose + hook
+  # scripts), upload it to S3 and ask CodeDeploy to roll it out to the ASG.
+  deploy:
+    name: Roll out to EC2 via CodeDeploy
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out the promoted commit
+        uses: actions/checkout@v7 # v7.0.1
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6 # v6.2.4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Assemble the CodeDeploy revision bundle
+        run: |
+          set -euo pipefail
+          mkdir -p bundle/scripts
+          cp deploy/codedeploy/appspec.yml bundle/
+          cp deploy/codedeploy/docker-compose.yml bundle/
+          cp deploy/codedeploy/scripts/*.sh bundle/scripts/
+          chmod +x bundle/scripts/*.sh
+
+      - name: Upload the revision to S3
+        id: rev
+        run: |
+          set -euo pipefail
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          KEY="hiring-agent/${SHA}.zip"
+          ( cd bundle && zip -qr ../revision.zip . )
+          aws s3 cp revision.zip "s3://${DEPLOY_BUCKET}/${KEY}"
+          echo "key=${KEY}" >> "$GITHUB_OUTPUT"
+
+      - name: Create the deployment
+        run: |
+          set -euo pipefail
+          # Fire and forget: this job goes green once CodeDeploy accepts the
+          # deployment. Track the rollout (and any rollback) in the console link.
+          DEPLOYMENT_ID=$(aws deploy create-deployment \
+            --application-name "$CODEDEPLOY_APP" \
+            --deployment-group-name "$CODEDEPLOY_GROUP" \
+            --deployment-config-name CodeDeployDefault.OneAtATime \
+            --s3-location "bucket=${DEPLOY_BUCKET},key=${{ steps.rev.outputs.key }},bundleType=zip" \
+            --file-exists-behavior OVERWRITE \
+            --description "CD ${{ github.event.workflow_run.head_sha || github.sha }}" \
+            --query deploymentId --output text)
+          echo "Deployment $DEPLOYMENT_ID"
+          echo "https://console.aws.amazon.com/codesuite/codedeploy/deployments/${DEPLOYMENT_ID}?region=${AWS_REGION}"
