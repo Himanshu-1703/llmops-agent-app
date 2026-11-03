@@ -236,3 +236,11 @@ workspace_app/
 
 # Online evals -- local checkpoint of the last scored time
 eval_checkpoint.json
+
+# Saved by deploy/pause/pause_aws.sh, read by resume_aws.sh
+deploy/pause/saved_state.json
+
+# AWS scripts(custom use case)
+deploy/pause
+deploy/pause/pause_aws.sh
+deploy/pause/resume_aws.sh
